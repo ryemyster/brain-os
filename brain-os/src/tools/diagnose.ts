@@ -66,16 +66,10 @@ export async function runDiagnose(company?: string): Promise<string> {
 
   const previousPatterns = readPatterns();
 
-  const user = [
-    `## Interview Notes (scope: ${company ?? "all"})`,
-    notes.join("\n\n"),
-    `## Ryan's Achievements\n${achievements}`,
-    previousPatterns ? `## Previously Identified Patterns\n${previousPatterns}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n\n---\n\n");
+  const staticContext = `## Ryan's Achievements\n${achievements}${previousPatterns ? `\n\n---\n\n## Previously Identified Patterns\n${previousPatterns}` : ""}`;
+  const user = `## Interview Notes (scope: ${company ?? "all"})\n\n${notes.join("\n\n")}`;
 
-  const analysis = await callModel("balanced", SYSTEM, user);
+  const analysis = await callModel("balanced", SYSTEM, user, staticContext);
 
   // Auto-save patterns so daily can surface them
   writePatterns(analysis);

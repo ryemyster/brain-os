@@ -28,23 +28,8 @@ export async function runApply(jd: string): Promise<string> {
     ? readFileSync(join(CAREER_DIR, "achievements.md"), "utf-8")
     : "(empty)";
 
-  const user = `## Job Description
-${jd}
+  const staticContext = `## Ryan's Resume\n${resume}\n\n---\n\n## Voice Guide\n${voice}\n\n---\n\n## Achievements\n${achievements}`;
+  const user = `## Job Description\n${jd}`;
 
----
-
-## Ryan's Resume
-${resume}
-
----
-
-## Voice Guide
-${voice}
-
----
-
-## Achievements
-${achievements}`;
-
-  return callModel("powerful", SYSTEM, user);
+  return callModel("powerful", SYSTEM, user, staticContext);
 }

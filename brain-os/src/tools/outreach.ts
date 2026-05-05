@@ -44,18 +44,14 @@ export async function runOutreach(
     : null;
   const storedContext = readCompanyContext(company);
 
+  const staticContext = `## Ryan's Resume\n${resume}\n\n---\n\n## Voice Guide\n${voice}\n\n---\n\n## Achievements\n${achievements}`;
   const user = [
     `## Company: ${company}`,
     targetPerson ? `## Target Person: ${targetPerson}` : "",
     role ? `## Target Role: ${role}` : "",
     pipelineContext ? `## Pipeline Notes\n${pipelineContext}` : "No pipeline notes yet — use general company knowledge.",
     storedContext ? `## Accumulated Intel\n${storedContext}` : "",
-    `## Ryan's Resume\n${resume}`,
-    `## Voice Guide\n${voice}`,
-    `## Achievements\n${achievements}`,
-  ]
-    .filter(Boolean)
-    .join("\n\n---\n\n");
+  ].filter(Boolean).join("\n\n---\n\n");
 
-  return callModel("balanced", SYSTEM, user);
+  return callModel("balanced", SYSTEM, user, staticContext);
 }

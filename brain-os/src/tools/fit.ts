@@ -36,19 +36,8 @@ export async function runFit(company: string): Promise<string> {
     ? readFileSync(join(CAREER_DIR, "pipeline", `${slug}.md`), "utf-8")
     : `No pipeline file yet for ${company}.`;
 
-  const user = `## Company: ${company}
+  const staticContext = `## Ryan's Resume\n${resume}\n\n---\n\n## Achievements\n${achievements}\n\n---\n\n## Job Criteria (what Ryan is looking for)\n${criteria}`;
+  const user = `## Company: ${company}\n\n## Pipeline Context\n${pipelineContext}`;
 
-## Pipeline Context
-${pipelineContext}
-
-## Ryan's Resume
-${resume}
-
-## Achievements
-${achievements}
-
-## Job Criteria (what Ryan is looking for)
-${criteria}`;
-
-  return callModel("balanced", SYSTEM, user);
+  return callModel("balanced", SYSTEM, user, staticContext);
 }

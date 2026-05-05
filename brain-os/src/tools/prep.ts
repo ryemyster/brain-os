@@ -33,17 +33,12 @@ export async function runPrep(company: string): Promise<string> {
 
   const storedContext = readCompanyContext(company);
 
-  const user = `## Company: ${company}
+  const staticContext = `## Ryan's Resume\n${resume}\n\n---\n\n## Ryan's Achievements\n${achievements}`;
+  const user = [
+    `## Company: ${company}`,
+    `## Pipeline Notes\n${pipelineContent}`,
+    storedContext ? `## Accumulated Intel (context store)\n${storedContext}` : "",
+  ].filter(Boolean).join("\n\n---\n\n");
 
-## Pipeline Notes
-${pipelineContent}
-
-${storedContext ? `## Accumulated Intel (context store)\n${storedContext}\n` : ""}
-## Ryan's Achievements
-${achievements}
-
-## Ryan's Resume
-${resume}`;
-
-  return callModel("balanced", SYSTEM, user);
+  return callModel("balanced", SYSTEM, user, staticContext);
 }
