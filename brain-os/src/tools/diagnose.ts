@@ -1,55 +1,84 @@
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
-import { writePatterns, readPatterns } from "../context.js";
+import { readPatterns, writePatterns } from "../context.js";
+import { callModel } from "../llm.js";
 
-export function runDiagnose(company?: string): object {
+const SYSTEM = `You are an interview performance coach for Ryan K. McDonald. Analyze his interview notes with unsparing honesty — the goal is to surface real patterns, not reassure him.
+
+Produce:
+1. Top 3 recurring failure patterns — be specific (e.g., "gives product design answers without anchoring to a user segment" not "needs more specificity")
+2. Top 2 recurring strengths — what's consistently landing
+3. Question types Ryan avoids or struggles with most
+4. Story gaps — question themes that came up but he had no strong story for
+5. Missed achievements — strong wins from the achievements file not making it into answers
+6. Ranked practice priority list — what to work on first/second/third with specific drill recommendations
+7. One-sentence diagnosis: the single most important thing holding back interview performance right now
+
+Write this like feedback from someone who has seen 500 PM interviews. Name the real pattern, not the polite version.`;
+
+export async function runDiagnose(company?: string): Promise<string> {
   const notesDir = join(CAREER_DIR, "interview-notes");
-  const achievementsPath = join(CAREER_DIR, "achievements.md");
-
-  const notes: Array<{ filename: string; content: string }> = [];
+  const notes: string[] = [];
 
   if (existsSync(notesDir)) {
     const files = readdirSync(notesDir).filter((f) => f.endsWith(".md") && f !== ".gitkeep");
     for (const file of files) {
       if (company && !file.toLowerCase().includes(company.toLowerCase())) continue;
-      notes.push({
-        filename: file,
-        content: readFileSync(join(notesDir, file), "utf-8"),
-      });
+      notes.push(`### ${file}\n${readFileSync(join(notesDir, file), "utf-8")}`);
     }
   }
 
-  const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
-
   if (notes.length === 0) {
-    return {
-      status: "no_notes",
-      message: company
-        ? `No interview notes found for ${company}. Add a file to career/interview-notes/${company.toLowerCase()}.md after your interviews.`
-        : "No interview notes found. Add files to career/interview-notes/ after each interview — one file per company. Include: questions asked, your answers, interviewer reactions, and any feedback received.",
-      template: `# Interview Notes — [Company Name]\n\n**Date:** YYYY-MM-DD\n**Round:** [Phone screen / Panel / Final / Take-home]\n**Interviewer(s):** [Name, role if known]\n\n## Questions asked\n\n1. [Question] — My answer: [What I said] — Their reaction: [How it landed]\n\n## Feedback received\n\n[Any direct or indirect feedback]\n\n## My assessment\n\n**What went well:**\n**What felt weak:**\n**Questions I couldn't answer well:**\n**Overall vibe:**`,
-    };
+    return [
+      company
+        ? `No interview notes found for ${company}.`
+        : "No interview notes found in career/interview-notes/.",
+      "",
+      "Add a file after each interview — one file per company. Template:",
+      "",
+      "```",
+      "# Interview Notes — [Company]",
+      "",
+      "**Date:** YYYY-MM-DD",
+      "**Round:** Phone screen / Panel / Final / Take-home",
+      "**Interviewer(s):** Name, role if known",
+      "",
+      "## Questions asked",
+      "",
+      "1. [Question] — My answer: [What I said] — Their reaction: [How it landed]",
+      "",
+      "## Feedback received",
+      "",
+      "## My assessment",
+      "",
+      "**What went well:**",
+      "**What felt weak:**",
+      "**Questions I couldn't answer well:**",
+      "**Overall vibe:**",
+      "```",
+    ].join("\n");
   }
 
-  const existingPatterns = readPatterns();
+  const achievements = existsSync(join(CAREER_DIR, "achievements.md"))
+    ? readFileSync(join(CAREER_DIR, "achievements.md"), "utf-8")
+    : "(empty)";
 
-  return {
-    task: "Analyze these interview notes to diagnose patterns in performance. Identify recurring issues, weak response types, and the highest-leverage areas to improve.",
-    instructions: [
-      "Read all interview notes and extract: questions asked, quality of Ryan's answers (based on his own assessment and any feedback), question types that recur.",
-      "Identify the top 3 recurring failure patterns — be specific (e.g., 'answers product design questions generically without naming a specific user segment', not 'needs to be more specific').",
-      "Identify the top 2 recurring strengths — what's consistently landing well.",
-      "Flag any question types Ryan consistently avoids or struggles with (metrics, behavioral, strategy, etc.).",
-      "Identify story gaps: question themes that came up but Ryan had no strong story for.",
-      "Compare against the achievements file — are strong achievements being left out of answers?",
-      "Output a ranked practice priority list: what to work on first, second, third — with specific drill recommendations for each.",
-      "End with one diagnosis sentence: the single most important thing holding back interview performance right now.",
-      "After analysis, call the `remember` tool with type='insight', label='interview-patterns', and your full diagnosis so it persists to the context store.",
-    ],
-    interview_notes: notes,
-    achievements,
-    scope: company ? `Filtered to: ${company}` : "All interviews",
-    previous_patterns: existingPatterns || null,
-  };
+  const previousPatterns = readPatterns();
+
+  const user = [
+    `## Interview Notes (scope: ${company ?? "all"})`,
+    notes.join("\n\n"),
+    `## Ryan's Achievements\n${achievements}`,
+    previousPatterns ? `## Previously Identified Patterns\n${previousPatterns}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n---\n\n");
+
+  const analysis = await callModel("balanced", SYSTEM, user);
+
+  // Auto-save patterns so daily can surface them
+  writePatterns(analysis);
+
+  return analysis;
 }

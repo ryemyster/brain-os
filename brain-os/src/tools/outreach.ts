@@ -1,54 +1,61 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
-import { appendOutreachLog } from "../context.js";
+import { appendOutreachLog, readCompanyContext } from "../context.js";
+import { callModel } from "../llm.js";
 
-export function runOutreach(
+const SYSTEM = `You are an outreach strategist for Ryan K. McDonald — Senior PM (AI/FinTech/HealthTech), founder of Ascendvent/AOSI, based in NYC, actively targeting Senior PM and Head of Product roles.
+
+Generate outreach strategy and message drafts. Rules:
+- Never open with "I hope this message finds you well" or "I am very interested in opportunities at..."
+- Never list credentials — show relevance through specificity
+- Never ask for a job in the first message — ask for a 20-minute conversation
+- Every message needs one company-specific or person-specific hook
+- Match Ryan's voice: direct, confident, shows he's done his homework
+
+Deliver:
+1. Best contact to reach (if not specified) — name the type of person and why
+2. Strongest outreach angle for this company and person
+3. LinkedIn DM — 3–4 sentences max. Hook in sentence one.
+4. Email alternative — subject line + 4–5 sentences
+5. 2–3 warm intro paths — type of person to find in common, community overlap, event angle
+6. One specific piece of recent company news or product detail to reference for timeliness`;
+
+export async function runOutreach(
   company: string,
   targetPerson?: string,
   role?: string
-): object {
+): Promise<string> {
   const slug = company.toLowerCase().replace(/\s+/g, "-");
 
-  const resumePath = join(CAREER_DIR, "resume.md");
-  const voicePath = join(CAREER_DIR, "voice-and-style.md");
-  const achievementsPath = join(CAREER_DIR, "achievements.md");
-  const pipelinePath = join(CAREER_DIR, "pipeline", `${slug}.md`);
+  appendOutreachLog(company, targetPerson ?? "", "drafting", `Outreach drafts generated${role ? ` for ${role}` : ""}.`);
 
-  const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf-8") : "(empty — add resume to career/resume.md)";
-  const voice = existsSync(voicePath) ? readFileSync(voicePath, "utf-8") : "(empty — add voice guide to career/voice-and-style.md)";
-  const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
-  const pipelineContext = existsSync(pipelinePath) ? readFileSync(pipelinePath, "utf-8") : null;
+  const resume = existsSync(join(CAREER_DIR, "resume.md"))
+    ? readFileSync(join(CAREER_DIR, "resume.md"), "utf-8")
+    : "(empty — add resume to career/resume.md)";
+  const voice = existsSync(join(CAREER_DIR, "voice-and-style.md"))
+    ? readFileSync(join(CAREER_DIR, "voice-and-style.md"), "utf-8")
+    : "(empty — add voice guide to career/voice-and-style.md)";
+  const achievements = existsSync(join(CAREER_DIR, "achievements.md"))
+    ? readFileSync(join(CAREER_DIR, "achievements.md"), "utf-8")
+    : "(empty)";
+  const pipelineContext = existsSync(join(CAREER_DIR, "pipeline", `${slug}.md`))
+    ? readFileSync(join(CAREER_DIR, "pipeline", `${slug}.md`), "utf-8")
+    : null;
+  const storedContext = readCompanyContext(company);
 
-  appendOutreachLog(company, targetPerson ?? "", "drafting", `Outreach strategy initiated${role ? ` for ${role}` : ""}. Drafts pending.`);
+  const user = [
+    `## Company: ${company}`,
+    targetPerson ? `## Target Person: ${targetPerson}` : "",
+    role ? `## Target Role: ${role}` : "",
+    pipelineContext ? `## Pipeline Notes\n${pipelineContext}` : "No pipeline notes yet — use general company knowledge.",
+    storedContext ? `## Accumulated Intel\n${storedContext}` : "",
+    `## Ryan's Resume\n${resume}`,
+    `## Voice Guide\n${voice}`,
+    `## Achievements\n${achievements}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n---\n\n");
 
-  return {
-    task: `Generate an outreach strategy and message drafts for ${company}${targetPerson ? ` — targeting ${targetPerson}` : ""}${role ? ` for the ${role} role` : ""}.`,
-    instructions: [
-      targetPerson
-        ? `Research ${targetPerson}'s background: current role at ${company}, career path, public writing or talks, any shared context with Ryan.`
-        : `Identify the best person to reach out to at ${company} for a PM role — typically the hiring manager, VP Product, or a PM on the relevant team.`,
-      "Identify the strongest outreach angle: shared background, company-specific insight Ryan can offer, a product observation, or a mutual connection path.",
-      "Draft a LinkedIn DM: 3-4 sentences max. Specific hook in sentence one (not 'I came across your profile'). No asking for a job directly — ask for a 20-minute conversation. Must sound like Ryan, not a template.",
-      "Draft an email alternative (subject line + 4-5 sentences) for cases where LinkedIn is unlikely to get a response.",
-      "Suggest 2-3 warm intro paths: who Ryan might know in common (type of person to find, not names), what community or event overlap might exist (e.g., NYC PM meetups, AI conferences).",
-      "Flag one specific piece of company news, product launch, or market development to reference — makes outreach timely and personal.",
-    ],
-    anti_patterns: [
-      "Do not open with 'I hope this message finds you well'",
-      "Do not say 'I am very interested in opportunities at...'",
-      "Do not list credentials — show relevance through specificity",
-      "Do not ask for a job in the first message — ask for a conversation",
-      "Do not be generic — every message must have one company-specific or person-specific detail",
-    ],
-    context: {
-      company,
-      target_person: targetPerson ?? "TBD — identify best contact",
-      role: role ?? "Senior PM or similar",
-    },
-    pipeline_context: pipelineContext ?? `No pipeline notes for ${company} yet. Run intel first to gather company context that will sharpen the outreach angle.`,
-    resume,
-    voice_guide: voice,
-    achievements,
-  };
+  return callModel("balanced", SYSTEM, user);
 }

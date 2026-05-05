@@ -1,35 +1,54 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
+import { callModel } from "../llm.js";
 
-export function runFit(company: string): object {
+const SYSTEM = `You are a talent and company-fit analyst evaluating Ryan K. McDonald as a PM candidate.
+
+Ryan's background: Senior PM, AI/FinTech/HealthTech, founder of Ascendvent/AOSI (Agent-Orchestrated Self-Improvement), built and published FounderOS MCP server, strong LLM product and agent orchestration experience, based in NYC.
+
+Score fit across 5 dimensions (1–5 each):
+1. Domain Expertise — does Ryan's domain experience match the company's core product?
+2. Industry Match — AI, FinTech, HealthTech overlap?
+3. Technical Depth — does the role require technical PM depth Ryan has?
+4. Company Stage Fit — seed/Series A/B/C/public — where has Ryan thrived?
+5. Leadership Level Match — IC PM, lead PM, Head of Product, or above?
+
+For each: score (1–5), Strong/Partial/Gap label, one-sentence rationale.
+Then: overall fit score /10, 2–3 specific angles where Ryan's background is uniquely relevant, 1–2 most likely hiring manager objections and how to preempt them.
+Verdict: Prioritize / Worth Pursuing / Pass — one sentence.
+
+Be specific to this company. Use Ryan's actual experience, not generic PM attributes.`;
+
+export async function runFit(company: string): Promise<string> {
   const slug = company.toLowerCase().replace(/\s+/g, "-");
 
-  const resumePath = join(CAREER_DIR, "resume.md");
-  const achievementsPath = join(CAREER_DIR, "achievements.md");
-  const criteriaPath = join(CAREER_DIR, "job-criteria.md");
-  const pipelinePath = join(CAREER_DIR, "pipeline", `${slug}.md`);
+  const resume = existsSync(join(CAREER_DIR, "resume.md"))
+    ? readFileSync(join(CAREER_DIR, "resume.md"), "utf-8")
+    : "(empty — add resume to career/resume.md)";
+  const achievements = existsSync(join(CAREER_DIR, "achievements.md"))
+    ? readFileSync(join(CAREER_DIR, "achievements.md"), "utf-8")
+    : "(empty)";
+  const criteria = existsSync(join(CAREER_DIR, "job-criteria.md"))
+    ? readFileSync(join(CAREER_DIR, "job-criteria.md"), "utf-8")
+    : "(empty)";
+  const pipelineContext = existsSync(join(CAREER_DIR, "pipeline", `${slug}.md`))
+    ? readFileSync(join(CAREER_DIR, "pipeline", `${slug}.md`), "utf-8")
+    : `No pipeline file yet for ${company}.`;
 
-  const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf-8") : "(empty — add resume to career/resume.md)";
-  const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
-  const criteria = existsSync(criteriaPath) ? readFileSync(criteriaPath, "utf-8") : "(empty)";
-  const pipelineContext = existsSync(pipelinePath) ? readFileSync(pipelinePath, "utf-8") : null;
+  const user = `## Company: ${company}
 
-  return {
-    task: `Score how well Ryan fits ${company} as a PM candidate. Research the company first, then analyze fit against the profile below.`,
-    instructions: [
-      `Research ${company}: what they build, what problems they solve, their PM org structure, and any open PM roles.`,
-      "Score fit across these dimensions (1-5 each): Domain Expertise, Industry Match, Technical Depth, Company Stage Fit, Leadership Level Match.",
-      "For each dimension: mark Strong (4-5), Partial (2-3), or Gap (1) and explain the rating in one sentence.",
-      "Overall fit score out of 10 with a one-paragraph rationale.",
-      "Identify the 2-3 angles where Ryan's background is uniquely relevant — be specific to this company.",
-      "Identify the 1-2 most likely objections a hiring manager would have and suggest how to preempt them.",
-      "Verdict: Prioritize, Worth Pursuing, or Pass — with one sentence of reasoning.",
-    ],
-    company,
-    pipeline_context: pipelineContext ?? `No pipeline file yet for ${company}. Create career/pipeline/${slug}.md to add notes as you learn more.`,
-    resume,
-    achievements,
-    job_criteria: criteria,
-  };
+## Pipeline Context
+${pipelineContext}
+
+## Ryan's Resume
+${resume}
+
+## Achievements
+${achievements}
+
+## Job Criteria (what Ryan is looking for)
+${criteria}`;
+
+  return callModel("balanced", SYSTEM, user);
 }
