@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
+import { appendOutreachLog } from "../context.js";
 
 export function runOutreach(
   company: string,
@@ -18,6 +19,8 @@ export function runOutreach(
   const voice = existsSync(voicePath) ? readFileSync(voicePath, "utf-8") : "(empty — add voice guide to career/voice-and-style.md)";
   const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
   const pipelineContext = existsSync(pipelinePath) ? readFileSync(pipelinePath, "utf-8") : null;
+
+  appendOutreachLog(company, targetPerson ?? "", "drafting", `Outreach strategy initiated${role ? ` for ${role}` : ""}. Drafts pending.`);
 
   return {
     task: `Generate an outreach strategy and message drafts for ${company}${targetPerson ? ` — targeting ${targetPerson}` : ""}${role ? ` for the ${role} role` : ""}.`,

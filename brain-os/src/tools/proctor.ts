@@ -2,6 +2,7 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
 import { getCompanyLoop } from "../data/maang.js";
+import { writeSession } from "../context.js";
 
 type InterviewType = "product" | "behavioral" | "metrics" | "strategy" | "vibe-coding" | "full";
 type Difficulty = "screen" | "panel" | "final";
@@ -134,6 +135,8 @@ export function runProctor(
       rubric: RUBRICS[interviewType] ?? [],
     }];
   }
+
+  writeSession(company ?? "general", interviewType, `Mock ${interviewType} session started. Difficulty: ${level}. Role: ${role ?? "Senior PM"}.`);
 
   const maangLoop = company ? getCompanyLoop(company) : null;
 

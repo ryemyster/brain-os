@@ -11,6 +11,7 @@ import { runProctor } from "./tools/proctor.js";
 import { runDiagnose } from "./tools/diagnose.js";
 import { runStoryDraft } from "./tools/story_draft.js";
 import { runLoop } from "./tools/loop.js";
+import { runRemember } from "./tools/remember.js";
 
 function toolResponse(result: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
@@ -137,6 +138,18 @@ export function createServer(): McpServer {
         .describe("An existing rough story draft to refine rather than mine from scratch."),
     },
     async ({ theme, existing_story }) => toolResponse(runStoryDraft(theme, existing_story))
+  );
+
+  server.tool(
+    "remember",
+    "Explicitly save something to the context store — company intel, a polished story, an insight, a task, or a session summary. Use this after any session to persist what was learned.",
+    {
+      type: z.enum(["company", "story", "insight", "task", "session"]).describe("What kind of thing you're saving. 'company' → company file. 'story' → story library. 'insight' / 'task' → insights.md. 'session' → session log."),
+      label: z.string().describe("Identifier for this entry — company name, story theme, insight title, etc."),
+      content: z.string().describe("The content to save. Write complete markdown — this is stored as-is."),
+      notion_sync: z.boolean().optional().describe("Flag for Notion sync (Phase 4 — marks the entry as pending sync). Default false."),
+    },
+    async ({ type, label, content, notion_sync }) => toolResponse(runRemember(type, label, content, notion_sync ?? false))
   );
 
   return server;

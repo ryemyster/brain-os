@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
+import { writeStory, readStory } from "../context.js";
 
 type StoryTheme =
   | "leadership"
@@ -57,6 +58,16 @@ const MINING_QUESTIONS: Record<string, string[]> = {
 };
 
 export function runStoryDraft(theme: StoryTheme, existingStory?: string): object {
+  // Seed or load existing story context from the store
+  const themes = theme === "all" ? Object.keys(MINING_QUESTIONS) : [theme];
+  const storedStories: Record<string, string> = {};
+  for (const t of themes) {
+    const stored = readStory(t);
+    if (stored) storedStories[t] = stored;
+  }
+  if (!existingStory && themes.length === 1) {
+    writeStory(themes[0], `Mining session initiated. Story pending.`);
+  }
   const resumePath = join(CAREER_DIR, "resume.md");
   const achievementsPath = join(CAREER_DIR, "achievements.md");
   const portfolioPath = join(CAREER_DIR, "portfolio.md");
@@ -105,6 +116,7 @@ export function runStoryDraft(theme: StoryTheme, existingStory?: string): object
 
     mining_questions: questions,
     existing_story: existingStory ?? null,
+    stored_stories: Object.keys(storedStories).length > 0 ? storedStories : null,
 
     candidate_context: {
       resume,

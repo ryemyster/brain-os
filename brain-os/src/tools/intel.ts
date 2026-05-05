@@ -1,11 +1,14 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
+import { writeCompanyContext } from "../context.js";
 
 export function runIntel(company: string): object {
   const slug = company.toLowerCase().replace(/\s+/g, "-");
   const pipelinePath = join(CAREER_DIR, "pipeline", `${slug}.md`);
   const existingNotes = existsSync(pipelinePath) ? readFileSync(pipelinePath, "utf-8") : null;
+
+  writeCompanyContext(company, "Intel Run", `Intel research initiated. See context/companies/${slug}.md for accumulated findings.`);
 
   return {
     task: `Generate a company intelligence report on ${company} for a job hunt context. Research each section below and synthesize findings.`,

@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
+import { writePatterns, readPatterns } from "../context.js";
 
 export function runDiagnose(company?: string): object {
   const notesDir = join(CAREER_DIR, "interview-notes");
@@ -31,6 +32,8 @@ export function runDiagnose(company?: string): object {
     };
   }
 
+  const existingPatterns = readPatterns();
+
   return {
     task: "Analyze these interview notes to diagnose patterns in performance. Identify recurring issues, weak response types, and the highest-leverage areas to improve.",
     instructions: [
@@ -42,9 +45,11 @@ export function runDiagnose(company?: string): object {
       "Compare against the achievements file — are strong achievements being left out of answers?",
       "Output a ranked practice priority list: what to work on first, second, third — with specific drill recommendations for each.",
       "End with one diagnosis sentence: the single most important thing holding back interview performance right now.",
+      "After analysis, call the `remember` tool with type='insight', label='interview-patterns', and your full diagnosis so it persists to the context store.",
     ],
     interview_notes: notes,
     achievements,
     scope: company ? `Filtered to: ${company}` : "All interviews",
+    previous_patterns: existingPatterns || null,
   };
 }
