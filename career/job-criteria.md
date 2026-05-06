@@ -18,7 +18,8 @@ Defines what Ryan is looking for. BrainOS `scan` reads this to filter and score 
 2. B2B SaaS (developer tools, data infrastructure, security platforms)
 3. FinTech (platform, infra, or data-heavy systems)
 4. HealthTech (data platforms, population systems, infra layers)
-5. Media / Streaming / AdTech (platform or infrastructure only)
+5. AdTech / CTV / OTT (SSP, DSP, ad decisioning, DAI/SSAI, programmatic delivery infrastructure)
+6. Media / Streaming (platform or infrastructure only — video delivery, player, CDN)
 
 ---
 
@@ -108,7 +109,8 @@ Defines what Ryan is looking for. BrainOS `scan` reads this to filter and score 
   - ~$60K/month coordination cost removed through governance redesign
   - $500K platform funding secured via product strategy
   - 10x user growth in 0→1 product build
-- Experience across security, media/streaming, healthcare, and AI systems with consistent pattern recognition
+- Experience across security, AdTech/OTT, media/streaming, healthcare, and AI systems with consistent pattern recognition
+- AdTech depth: SSP, DSP/yield management, DAI/SSAI, video player (FreeWheel, GAM), OTT ad delivery infrastructure at ESPN and Accenture; patented Fast Channels delivery architecture
 - Founder experience (Ascendvent, AOSI) with validated pivots and demand testing
 - Technical credibility from engineering background; operates inside system constraints
 - Strong bias toward outcomes over activity, clarity over process, and ownership over ambiguity

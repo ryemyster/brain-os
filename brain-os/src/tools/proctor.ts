@@ -186,6 +186,7 @@ export function runProctor(
       "After each answer: score it against the rubric (1-5 per criterion), give one specific strength, one specific improvement, and a revised version of the weak part.",
       "Do not give the next question until feedback on the current one is acknowledged.",
       "After all questions: give an overall session score, the top pattern you observed (positive or negative), and the one thing to work on before the next session.",
+      "At the end of the session, prompt Ryan: 'Run `remember type=session` to save this session summary before we close.'",
       "For vibe-coding questions: let Ryan actually build or write — give them time, don't rush to feedback.",
       ...(maangRoundContext
         ? [
