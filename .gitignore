@@ -6,3 +6,4 @@ dist/
 *.jpg
 *.jpeg
 .claude/settings.local.json
+.vscode/
