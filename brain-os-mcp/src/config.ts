@@ -6,3 +6,8 @@ export const WRITING_DIR = join(BRAIN_ROOT, "writing");
 export const PROJECTS_DIR = join(BRAIN_ROOT, "projects");
 export const CONTEXT_DIR = join(BRAIN_ROOT, "context");
 export const NOTION_TOKEN = process.env.NOTION_TOKEN ?? "";
+
+// External URLs fetched at tool call time — update here, propagates everywhere
+export const EXTERNAL_URLS = {
+  portfolio: "https://ryankmcdonald.netlify.app/",
+} as const;

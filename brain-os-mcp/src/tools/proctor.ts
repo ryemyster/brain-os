@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { CAREER_DIR } from "../config.js";
+import { CAREER_DIR, EXTERNAL_URLS } from "../config.js";
+import { fetchUrl } from "../fetch.js";
 import { getCompanyLoop } from "../data/maang.js";
 import { writeSession } from "../context.js";
 
@@ -100,20 +101,18 @@ function pickQuestions(type: string, count: number): string[] {
   return shuffled.slice(0, count);
 }
 
-export function runProctor(
+export async function runProctor(
   interviewType: InterviewType,
   company?: string,
   role?: string,
   difficulty?: Difficulty
-): object {
+): Promise<object> {
   const resumePath = join(CAREER_DIR, "resume.md");
   const achievementsPath = join(CAREER_DIR, "achievements.md");
-  const portfolioPath = join(CAREER_DIR, "portfolio.md");
-  const voicePath = join(CAREER_DIR, "voice-and-style.md");
 
   const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf-8") : "(empty)";
   const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
-  const portfolio = existsSync(portfolioPath) ? readFileSync(portfolioPath, "utf-8") : "(empty)";
+  const portfolio = await fetchUrl(EXTERNAL_URLS.portfolio, "(portfolio unavailable)");
 
   const level = difficulty ?? "panel";
   const questionCount = level === "screen" ? 3 : level === "panel" ? 5 : 7;

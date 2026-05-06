@@ -1,8 +1,11 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { CAREER_DIR } from "../config.js";
+import { CAREER_DIR, EXTERNAL_URLS } from "../config.js";
+import { fetchUrl } from "../fetch.js";
 import { writeStory, readStory } from "../context.js";
 import { notion, NOTION_PAGES, NOTION_NARRATIVE_PAGES } from "../notion-client.js";
+
+const PORTFOLIO_URL = "https://ryankmcdonald.netlify.app/";
 
 type StoryTheme =
   | "leadership"
@@ -71,12 +74,12 @@ export async function runStoryDraft(theme: StoryTheme, existingStory?: string): 
 
   const resumePath = join(CAREER_DIR, "resume.md");
   const achievementsPath = join(CAREER_DIR, "achievements.md");
-  const portfolioPath = join(CAREER_DIR, "portfolio.md");
+
   const voicePath = join(CAREER_DIR, "voice-and-style.md");
 
   const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf-8") : "(empty)";
   const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
-  const portfolio = existsSync(portfolioPath) ? readFileSync(portfolioPath, "utf-8") : "(empty)";
+  const portfolio = await fetchUrl(EXTERNAL_URLS.portfolio, "(portfolio unavailable)");
   const voice = existsSync(voicePath) ? readFileSync(voicePath, "utf-8") : "(empty)";
 
   // Fetch Notion narrative pages — background context for story mining
