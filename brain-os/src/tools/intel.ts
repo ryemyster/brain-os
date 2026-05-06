@@ -1,14 +1,10 @@
-import { readFileSync, existsSync } from "fs";
+import { existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
-import { writeCompanyContext } from "../context.js";
 
 export function runIntel(company: string): object {
   const slug = company.toLowerCase().replace(/\s+/g, "-");
   const pipelinePath = join(CAREER_DIR, "pipeline", `${slug}.md`);
-  const existingNotes = existsSync(pipelinePath) ? readFileSync(pipelinePath, "utf-8") : null;
-
-  writeCompanyContext(company, "Intel Run", `Intel research initiated. See context/companies/${slug}.md for accumulated findings.`);
 
   return {
     task: `Generate a company intelligence report on ${company} for a job hunt context. Research each section below and synthesize findings.`,
@@ -62,7 +58,9 @@ export function runIntel(company: string): object {
       },
     },
     output_format: "For each section: 3-5 bullet findings + one-sentence bottom line. End with an Overall Signal: Green (strong opportunity), Yellow (worth watching), or Red (concerning).",
-    existing_notes: existingNotes ?? `No pipeline notes yet for ${company}. Create career/pipeline/${slug}.md to capture findings from this research.`,
+    existing_notes: existsSync(pipelinePath)
+      ? { path: pipelinePath, instruction: "Read this file before researching — it contains prior findings you should build on, not repeat." }
+      : `No pipeline notes yet for ${company}. Create career/pipeline/${slug}.md to capture findings from this research.`,
     save_instruction: `After generating this report, offer to save the key findings to career/pipeline/${slug}.md for future reference.`,
   };
 }

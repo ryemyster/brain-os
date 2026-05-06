@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "fs";
+import { existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
 
@@ -7,15 +7,17 @@ export function runScan(filters?: { focus?: string; stage?: string; location?: s
   const criteriaPath = join(CAREER_DIR, "job-criteria.md");
   const achievementsPath = join(CAREER_DIR, "achievements.md");
 
-  const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf-8") : "(empty — add resume to career/resume.md)";
-  const criteria = existsSync(criteriaPath) ? readFileSync(criteriaPath, "utf-8") : "(empty — add criteria to career/job-criteria.md)";
-  const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
-
   const focusAreas = filters?.focus ?? "AI, FinTech, HealthTech";
   const location = filters?.location ?? "New York City";
 
   return {
     task: "Find companies actively hiring for PM roles that match this candidate's profile. Execute the search queries below, then synthesize findings into a prioritized opportunity list.",
+    context_files: {
+      resume: existsSync(resumePath) ? resumePath : null,
+      job_criteria: existsSync(criteriaPath) ? criteriaPath : null,
+      achievements: existsSync(achievementsPath) ? achievementsPath : null,
+      instruction: "Read these files before evaluating fit — they define Ryan's background and what he's looking for.",
+    },
     instructions: [
       "Run each search query and collect 15-20 distinct companies with open PM roles.",
       "For each company: extract role title, seniority, whether AI is core to the product, and any signals about team culture or PM org strength.",
@@ -37,8 +39,5 @@ export function runScan(filters?: { focus?: string; stage?: string; location?: s
       location,
       differentiators: "AI/FinTech/HealthTech PM, founder experience, built and shipped MCP server (FounderOS), agent orchestration and LLM product design background",
     },
-    resume,
-    job_criteria: criteria,
-    achievements,
   };
 }
