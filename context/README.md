@@ -4,7 +4,7 @@ This directory is the persistent memory layer for BrainOS. It is written to auto
 
 ## Current architecture — file-based context store
 
-All persistence is flat markdown files, written and read by `brain-os/src/context.ts`.
+All persistence is flat markdown files, written and read by `brain-os-mcp/src/context.ts`.
 
 | Path | Written by | Contains |
 |------|-----------|---------|

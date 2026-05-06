@@ -22,7 +22,8 @@ No skills are defined yet. Below are examples relevant to this project:
 - `/cold-dm` — draft a cold LinkedIn DM using `outreach` tool + voice guide
 
 ### Dev
-- `/build-brainos` — run `npm run build` inside `brain-os/` and report errors
+
+- `/build-brainos` — run `npm run build` inside `brain-os-mcp/` and report errors
 - `/sync-context` — summarize the current session and call `remember` to persist it
 
 ## How to add a skill

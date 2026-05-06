@@ -73,7 +73,7 @@ MCP server registered as `brain-os`. Job hunt workflow detail in `.claude/skills
 | `loop` | MAANG interview loop reference |
 | `remember` | Persist intel, stories, insights, tasks, or session summaries |
 
-If tools aren't responding: `npm run build` inside `brain-os/`, verify registration in `~/.claude/settings.json`.
+If tools aren't responding: `npm run build` inside `brain-os-mcp/`, verify registration in `~/.claude/settings.json`.
 
 ---
 
