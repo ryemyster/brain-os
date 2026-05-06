@@ -9,7 +9,15 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git status)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "WebSearch",
+      "mcp__claude_ai_Notion__notion-search",
+      "mcp__claude_ai_Notion__notion-create-pages",
+      "mcp__brain-os__scan",
+      "mcp__claude_ai_Notion__notion-update-page",
+      "WebFetch(domain:www.arcade.dev)",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "mcp__brain-os__intel"
     ]
   }
 }

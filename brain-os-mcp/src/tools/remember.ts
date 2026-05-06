@@ -5,14 +5,7 @@ export function runRemember(
   label: string,
   content: string,
   notionSync = false
-): object {
+): string {
   const result = remember(type, content, label, notionSync);
-  return {
-    saved: true,
-    type,
-    label,
-    saved_to: result.saved_to,
-    notion_sync_pending: result.notion_sync_pending,
-    message: `Saved ${type} entry "${label}" to ${result.saved_to}.${notionSync ? " Notion sync pending (Phase 4)." : ""}`,
-  };
+  return `Saved ${type} "${label}" to ${result.saved_to}.${notionSync ? " Notion sync pending (Phase 4)." : ""}`;
 }

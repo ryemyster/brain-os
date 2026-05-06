@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { CAREER_DIR } from "../config.js";
+import { CAREER_DIR, slugify } from "../config.js";
 import { appendOutreachLog, readCompanyContext } from "../context.js";
 import { callModel } from "../llm.js";
 import { notion, NOTION_PAGES } from "../notion-client.js";
@@ -29,7 +29,7 @@ export async function runOutreach(
   targetPerson?: string,
   role?: string
 ): Promise<string> {
-  const slug = company.toLowerCase().replace(/\s+/g, "-");
+  const slug = slugify(company);
 
   appendOutreachLog(company, targetPerson ?? "", "drafting", `Outreach drafts generated${role ? ` for ${role}` : ""}.`);
 

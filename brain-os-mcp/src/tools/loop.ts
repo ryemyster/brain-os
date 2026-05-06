@@ -1,13 +1,19 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
+import { notion, NOTION_PAGES } from "../notion-client.js";
 import { getCompanyLoop, getRound, MAANG_LOOPS } from "../data/maang.js";
 
-export function runLoop(company: string, round?: string): object {
-  const resumePath = join(CAREER_DIR, "resume.md");
+export async function runLoop(company: string, round?: string): Promise<object> {
   const achievementsPath = join(CAREER_DIR, "achievements.md");
 
-  const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf-8") : "(empty)";
+  const [notionResume] = await Promise.all([
+    notion.fetchPage(NOTION_PAGES.resume),
+  ]);
+
+  const resume = notionResume.startsWith("(unavailable")
+    ? (existsSync(join(CAREER_DIR, "resume.md")) ? readFileSync(join(CAREER_DIR, "resume.md"), "utf-8") : "(empty)")
+    : notionResume;
   const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
 
   const loop = getCompanyLoop(company);

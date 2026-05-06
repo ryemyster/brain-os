@@ -1,13 +1,33 @@
 import { existsSync } from "fs";
 import { join } from "path";
-import { CAREER_DIR } from "../config.js";
+import { CAREER_DIR, slugify } from "../config.js";
+import { notion, NOTION_PAGES } from "../notion-client.js";
+import type { TaskSpec } from "../types.js";
 
-export function runIntel(company: string): object {
-  const slug = company.toLowerCase().replace(/\s+/g, "-");
+export async function runIntel(company: string): Promise<TaskSpec> {
+  const slug = slugify(company);
   const pipelinePath = join(CAREER_DIR, "pipeline", `${slug}.md`);
+
+  const [resume, coreWhy] = await Promise.all([
+    notion.fetchPage(NOTION_PAGES.resume),
+    notion.fetchPage(NOTION_PAGES.core_why),
+  ]);
 
   return {
     task: `Generate a company intelligence report on ${company} for a job hunt context. Research each section below and synthesize findings.`,
+    instructions: [
+      "Read candidate_context (resume + positioning) before researching — tailor findings to Ryan's background.",
+      "Research each section using the questions as a guide — synthesize findings, don't just list raw answers.",
+      "For each section: 3-5 bullet findings + one-sentence bottom line.",
+      "End with an Overall Signal: Green (strong opportunity), Yellow (worth watching), or Red (concerning).",
+      existsSync(pipelinePath)
+        ? `Read ${pipelinePath} before researching — it contains prior findings you should build on, not repeat.`
+        : `No pipeline notes yet for ${company}. Offer to create career/pipeline/${slug}.md after generating the report.`,
+    ],
+    context: {
+      resume,
+      core_why: coreWhy,
+    },
     sections: {
       nyc_presence: {
         description: "New York City footprint",
@@ -57,10 +77,5 @@ export function runIntel(company: string): object {
         ],
       },
     },
-    output_format: "For each section: 3-5 bullet findings + one-sentence bottom line. End with an Overall Signal: Green (strong opportunity), Yellow (worth watching), or Red (concerning).",
-    existing_notes: existsSync(pipelinePath)
-      ? { path: pipelinePath, instruction: "Read this file before researching — it contains prior findings you should build on, not repeat." }
-      : `No pipeline notes yet for ${company}. Create career/pipeline/${slug}.md to capture findings from this research.`,
-    save_instruction: `After generating this report, offer to save the key findings to career/pipeline/${slug}.md for future reference.`,
   };
 }

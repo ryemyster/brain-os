@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { CAREER_DIR } from "../config.js";
+import { CAREER_DIR, slugify } from "../config.js";
 import { readCompanyContext } from "../context.js";
 import { callModel } from "../llm.js";
 import { notion, NOTION_PAGES, NOTION_COLLECTIONS } from "../notion-client.js";
@@ -18,7 +18,7 @@ Lead with what matters most. Be specific to this company — no generic PM prep 
 Notion data is the source of truth — use it over local fallback files when available.`;
 
 export async function runPrep(company: string): Promise<string> {
-  const slug = company.toLowerCase().replace(/\s+/g, "-");
+  const slug = slugify(company);
 
   // Notion: live pipeline entry + rich career context
   const [trackerEntry, resume, stories, coreWhy, maangRubric] = await Promise.all([

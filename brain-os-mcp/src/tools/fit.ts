@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { CAREER_DIR } from "../config.js";
+import { CAREER_DIR, slugify } from "../config.js";
 import { callModel } from "../llm.js";
 import { notion, NOTION_PAGES, NOTION_COLLECTIONS } from "../notion-client.js";
 
@@ -23,7 +23,7 @@ Be specific to this company. Use Ryan's actual experience, not generic PM attrib
 Use Notion Resume, Core Why, and Rates Discovery as primary sources over local files.`;
 
 export async function runFit(company: string): Promise<string> {
-  const slug = company.toLowerCase().replace(/\s+/g, "-");
+  const slug = slugify(company);
 
   const [resume, coreWhy, rates, trackerEntry] = await Promise.all([
     notion.fetchPage(NOTION_PAGES.resume),

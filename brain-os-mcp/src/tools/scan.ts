@@ -4,9 +4,22 @@ import { CAREER_DIR, EXTERNAL_URLS } from "../config.js";
 import { fetchUrl } from "../fetch.js";
 import { notion, NOTION_PAGES } from "../notion-client.js";
 
+function parseLocationFromCriteria(criteria: string): string {
+  const match = criteria.match(/##\s*Location\s*\n([\s\S]*?)(?=\n##|$)/i);
+  if (!match) return "Remote or major US city";
+  const firstLine = match[1].trim().split("\n")[0].trim();
+  return firstLine || "Remote or major US city";
+}
+
 export async function runScan(filters?: { focus?: string; stage?: string; location?: string }): Promise<object> {
   const focusAreas = filters?.focus ?? "AI, FinTech, HealthTech";
-  const location = filters?.location ?? "New York City";
+
+  // Read criteria first (sync) so location can be derived from it before async fetches
+  const criteria = existsSync(join(CAREER_DIR, "job-criteria.md"))
+    ? readFileSync(join(CAREER_DIR, "job-criteria.md"), "utf-8")
+    : "(empty)";
+
+  const location = filters?.location ?? parseLocationFromCriteria(criteria);
 
   const [resume, coreWhy, rates, portfolio] = await Promise.all([
     notion.fetchPage(NOTION_PAGES.resume),
@@ -14,10 +27,6 @@ export async function runScan(filters?: { focus?: string; stage?: string; locati
     notion.fetchPage(NOTION_PAGES.rates_discovery),
     fetchUrl(EXTERNAL_URLS.portfolio, "(portfolio unavailable)"),
   ]);
-
-  const criteria = existsSync(join(CAREER_DIR, "job-criteria.md"))
-    ? readFileSync(join(CAREER_DIR, "job-criteria.md"), "utf-8")
-    : "(empty)";
 
   return {
     task: "Find companies actively hiring for PM roles that match this candidate's profile. Execute the search queries below, then synthesize findings into a prioritized opportunity list.",
@@ -34,9 +43,9 @@ export async function runScan(filters?: { focus?: string; stage?: string; locati
     search_queries: [
       `"senior product manager" OR "head of product" AI fintech healthtech "${location}" site:greenhouse.io OR site:lever.co`,
       `"senior PM" OR "principal product manager" AI startup "${location}" -junior -associate`,
-      `"product manager" AI "New York" fintech 2026 job opening`,
-      `site:linkedin.com/jobs "senior product manager" AI New York`,
-      `"head of product" OR "director of product" AI-native company NYC 2026`,
+      `"product manager" AI "${location}" fintech 2026 job opening`,
+      `site:linkedin.com/jobs "senior product manager" AI "${location}"`,
+      `"head of product" OR "director of product" AI-native company "${location}" 2026`,
     ],
     candidate_profile: {
       target_roles: ["Senior PM", "Staff PM", "Head of Product", "Director of Product"],

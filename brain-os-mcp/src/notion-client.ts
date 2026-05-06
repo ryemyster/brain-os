@@ -1,4 +1,5 @@
 import { Client } from "@notionhq/client";
+import { slugify } from "./config.js";
 import type {
   BlockObjectResponse,
   PageObjectResponse,
@@ -47,10 +48,6 @@ export const NOTION_NARRATIVE_PAGES: Record<string, string> = {
   "bank-of-america": "3427328f2da58083af24f9edcd13bdc7",
   "ascendvent": "3427328f2da580429bb6f33481e48c24",
 };
-
-function slugify(company: string): string {
-  return company.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-}
 
 // Extract plain text from a Notion block
 function blockToText(block: BlockObjectResponse | PartialBlockObjectResponse): string {
@@ -118,7 +115,7 @@ function propertyToString(prop: PageObjectResponse["properties"][string]): strin
   }
 }
 
-const UNAVAILABLE = "(Notion unavailable — set NOTION_TOKEN)";
+const UNAVAILABLE = "(unavailable: NOTION_TOKEN not set)";
 
 export class NotionService {
   private client!: Client;
@@ -142,17 +139,17 @@ export class NotionService {
       const lines = blocks.results.map(blockToText).filter(Boolean);
       return lines.join("\n") || "(page is empty)";
     } catch (err: any) {
-      return `(Notion fetch failed: ${err?.message ?? "unknown error"})`;
+      return `(unavailable: ${err?.message ?? "Notion fetch failed"})`;
     }
   }
 
   // Safe version — never throws, returns fallback string on any error
   async fetchPageSafe(pageId: string): Promise<string> {
-    if (!this.available) return "(unavailable)";
+    if (!this.available) return "(unavailable: NOTION_TOKEN not set)";
     try {
       return await this.fetchPage(pageId);
-    } catch {
-      return "(unavailable)";
+    } catch (err: any) {
+      return `(unavailable: ${err?.message ?? "Notion fetch failed"})`;
     }
   }
 
@@ -183,7 +180,7 @@ export class NotionService {
 
       return rows.join("\n");
     } catch (err: any) {
-      return `(Notion query failed: ${err?.message ?? "unknown error"})`;
+      return `(unavailable: ${err?.message ?? "Notion query failed"})`;
     }
   }
 

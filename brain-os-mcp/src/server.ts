@@ -81,7 +81,7 @@ export function createServer(): McpServer {
     {
       company: z.string().describe("Company name to research (e.g. 'Ramp', 'Cohere')."),
     },
-    async ({ company }) => toolResponse(runIntel(company))  // context loader — needs web search
+    async ({ company }) => toolResponse(await runIntel(company))  // context loader — needs web search
   );
 
   server.tool(
@@ -129,7 +129,7 @@ export function createServer(): McpServer {
       company: z.string().describe("Company name (Meta, Amazon, Netflix, Google, Apple). Aliases work too (e.g., 'FB', 'AWS')."),
       round: z.string().optional().describe("Specific round name or type to drill into (e.g., 'Bar Raiser', 'Product Sense', 'Behavioral'). Omit to get the full loop overview."),
     },
-    async ({ company, round }) => toolResponse(runLoop(company, round))
+    async ({ company, round }) => toolResponse(await runLoop(company, round))
   );
 
   server.tool(
@@ -156,7 +156,7 @@ export function createServer(): McpServer {
       content: z.string().describe("The content to save. Write complete markdown — this is stored as-is."),
       notion_sync: z.boolean().optional().describe("Flag for Notion sync (Phase 4 — marks the entry as pending sync). Default false."),
     },
-    async ({ type, label, content, notion_sync }) => toolResponse(runRemember(type, label, content, notion_sync ?? false))
+    async ({ type, label, content, notion_sync }) => generatedResponse(runRemember(type, label, content, notion_sync ?? false))
   );
 
   return server;
