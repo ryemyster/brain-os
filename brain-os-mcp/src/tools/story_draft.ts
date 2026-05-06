@@ -2,6 +2,7 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
 import { writeStory, readStory } from "../context.js";
+import { NOTION_PAGES, NOTION_NARRATIVE_PAGES, buildNotionContext } from "../notion.js";
 
 type StoryTheme =
   | "leadership"
@@ -125,5 +126,50 @@ export function runStoryDraft(theme: StoryTheme, existingStory?: string): object
       voice_guide: voice,
       note: "Draft all stories in Ryan's voice — match the tone, rhythm, and word choices from the voice guide. Don't sanitize or make it sound like a press release.",
     },
+
+    notion_context: buildNotionContext([
+      {
+        label: "Stories (STAR) — master achievement bank",
+        id: NOTION_PAGES.stories_star,
+        type: "page",
+        note: "Primary source for existing STAR stories — read before drafting to avoid duplicating or contradicting what's already written.",
+      },
+      {
+        label: "Yahoo narrative (background — may be outdated)",
+        id: NOTION_NARRATIVE_PAGES["yahoo"],
+        type: "page",
+        background_only: true,
+      },
+      {
+        label: "Splunk narrative (background — may be outdated)",
+        id: NOTION_NARRATIVE_PAGES["splunk"],
+        type: "page",
+        background_only: true,
+      },
+      {
+        label: "Cognizant narrative (background — may be outdated)",
+        id: NOTION_NARRATIVE_PAGES["cognizant"],
+        type: "page",
+        background_only: true,
+      },
+      {
+        label: "Bank of America narrative (background — may be outdated)",
+        id: NOTION_NARRATIVE_PAGES["bank-of-america"],
+        type: "page",
+        background_only: true,
+      },
+      {
+        label: "Ascendvent narrative (background — may be outdated)",
+        id: NOTION_NARRATIVE_PAGES["ascendvent"],
+        type: "page",
+        background_only: true,
+      },
+    ]),
+
+    notion_instructions: [
+      "Fetch the Stories (STAR) page first — it's the primary story corpus. Read all existing stories before mining new ones.",
+      "Per-company narrative pages are background context — stale braindumps. Use for raw material only; verify details with Ryan.",
+      "After a story is finalized, save it using mcp__brain-os__remember (type=story, label=<theme>) to persist it.",
+    ],
   };
 }

@@ -13,12 +13,13 @@ import { runStoryDraft } from "./tools/story_draft.js";
 import { runLoop } from "./tools/loop.js";
 import { runRemember } from "./tools/remember.js";
 
-// For context-loader tools (proctor, story_draft, loop, intel, scan) — returns structured JSON for Claude to act on
+// All tools are context-loaders — return structured JSON task objects for Claude to act on.
+// Claude fetches Notion data, assembles context, then generates the final output in-session.
 function toolResponse(result: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
 }
 
-// For direct-generation tools (daily, fit, prep, diagnose, outreach, apply) — returns finished text
+// Kept for any future direct-generation tools that don't need Notion context.
 function generatedResponse(text: string) {
   return { content: [{ type: "text" as const, text }] };
 }
@@ -33,16 +34,16 @@ export function createServer(): McpServer {
     "daily",
     "Morning brief — loads job pipeline, writing queue, and project context into a structured daily summary. Run this at the start of each day.",
     {},
-    async () => generatedResponse(await runDaily())
+    () => toolResponse(runDaily())
   );
 
   server.tool(
     "prep",
-    "Interview and meeting prep for a specific company. Loads pipeline notes and achievements, returns tailored talking points and likely questions.",
+    "Interview and meeting prep for a specific company. Loads pipeline notes and achievements, returns a task object with Notion context for Claude to fetch and assemble.",
     {
       company: z.string().describe("Company name to prep for (e.g. 'Stripe'). Matches against career/pipeline/{company-name}.md — use the same slug if the file exists."),
     },
-    async ({ company }) => generatedResponse(await runPrep(company))
+    ({ company }) => toolResponse(runPrep(company))
   );
 
   server.tool(
@@ -51,7 +52,7 @@ export function createServer(): McpServer {
     {
       jd: z.string().describe("Full job description text to analyze against career/resume.md."),
     },
-    async ({ jd }) => generatedResponse(await runApply(jd))
+    ({ jd }) => toolResponse(runApply(jd))
   );
 
   server.tool(
@@ -67,11 +68,11 @@ export function createServer(): McpServer {
 
   server.tool(
     "fit",
-    "Fit analysis for a specific company — scores how well Ryan matches across domain, industry, technical depth, stage, and leadership level. Returns a verdict with the strongest angles and likely objections.",
+    "Fit analysis for a specific company — scores how well Ryan matches across domain, industry, technical depth, stage, and leadership level. Returns a task object with Notion context for Claude to fetch and assemble.",
     {
       company: z.string().describe("Company name to analyze fit against (e.g. 'Anthropic', 'Plaid')."),
     },
-    async ({ company }) => generatedResponse(await runFit(company))
+    ({ company }) => toolResponse(runFit(company))
   );
 
   server.tool(
@@ -91,7 +92,7 @@ export function createServer(): McpServer {
       target_person: z.string().optional().describe("Specific person to contact (name + title if known). If omitted, the tool will identify the best contact."),
       role: z.string().optional().describe("Specific role you're targeting (e.g. 'Senior PM, Growth'). Sharpens the message angle."),
     },
-    async ({ company, target_person, role }) => generatedResponse(await runOutreach(company, target_person, role))
+    ({ company, target_person, role }) => toolResponse(runOutreach(company, target_person, role))
   );
 
   server.tool(
@@ -118,7 +119,7 @@ export function createServer(): McpServer {
     {
       company: z.string().optional().describe("Filter to a specific company's notes. Omit to analyze all interviews."),
     },
-    async ({ company }) => generatedResponse(await runDiagnose(company))
+    ({ company }) => toolResponse(runDiagnose(company))
   );
 
   server.tool(
