@@ -1,8 +1,9 @@
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
-import { readPatterns } from "../context.js";
-import { NOTION_PAGES, NOTION_COLLECTIONS, buildNotionContext, getCompanyPageId } from "../notion.js";
+import { readPatterns, writePatterns } from "../context.js";
+import { callModel } from "../llm.js";
+import { notion, NOTION_PAGES, NOTION_COLLECTIONS } from "../notion-client.js";
 
 const SYSTEM = `You are an interview performance coach for Ryan K. McDonald. Analyze his interview notes with unsparing honesty — the goal is to surface real patterns, not reassure him.
 
@@ -15,14 +16,22 @@ Produce:
 6. Ranked practice priority list — what to work on first/second/third with specific drill recommendations
 7. One-sentence diagnosis: the single most important thing holding back interview performance right now
 
-Write this like feedback from someone who has seen 500 PM interviews. Name the real pattern, not the polite version.
+Write this like feedback from someone who has seen 500 PM interviews. Name the real pattern, not the polite version.`;
 
-After generating the analysis, call mcp__brain-os__remember with type=insight, label="interview-patterns", content=<full analysis> to persist the patterns for daily briefings.`;
+export async function runDiagnose(company?: string): Promise<string> {
+  const [maangRubric, recruiterActivity, stories] = await Promise.all([
+    notion.fetchPage(NOTION_PAGES.maang_behavioral_map),
+    notion.queryDatabase(NOTION_COLLECTIONS.recruiter_interview_activity),
+    notion.fetchPage(NOTION_PAGES.stories_star),
+  ]);
 
-export function runDiagnose(company?: string): object {
+  const companyPage = company ? notion.getCompanyPageId(company) : null;
+  const companyContext = companyPage
+    ? await notion.fetchPageSafe(companyPage.id)
+    : "";
+
   const notesDir = join(CAREER_DIR, "interview-notes");
   const notes: string[] = [];
-
   if (existsSync(notesDir)) {
     const files = readdirSync(notesDir).filter((f) => f.endsWith(".md") && f !== ".gitkeep");
     for (const file of files) {
@@ -37,7 +46,15 @@ export function runDiagnose(company?: string): object {
 
   const previousPatterns = readPatterns();
 
-  const localContext = [
+  const staticContext = [
+    `## MAANG Behavioral Story Map — Rubric with Gap Scores (Notion)\n${maangRubric}`,
+    `## Ryan's Stories — STAR Achievement Bank (Notion)\n${stories}`,
+    companyContext ? `## ${company} Prep Page (background — may be outdated)\n${companyContext}` : "",
+  ].filter(Boolean).join("\n\n---\n\n");
+
+  const user = [
+    `## Analysis Scope: ${company ?? "all interviews"}`,
+    `## Recruiter / Interview Activity (Notion)\n${recruiterActivity}`,
     notes.length > 0
       ? `## Local Interview Notes (scope: ${company ?? "all"})\n\n${notes.join("\n\n")}`
       : `## Local Interview Notes\nNo notes found in career/interview-notes/ — rely on Recruiter Activity DB from Notion.`,
@@ -45,49 +62,9 @@ export function runDiagnose(company?: string): object {
     previousPatterns ? `## Previously Identified Patterns\n${previousPatterns}` : "",
   ].filter(Boolean).join("\n\n---\n\n");
 
-  const companyPage = company ? getCompanyPageId(company) : null;
+  const analysis = await callModel("balanced", SYSTEM, user, staticContext);
 
-  const notionItems: any[] = [
-    {
-      label: "MAANG Behavioral Story Map — rubric with gap scores",
-      id: NOTION_PAGES.maang_behavioral_map,
-      type: "page" as const,
-      note: "Contains actual gap scores across behavioral themes — primary input for identifying story gaps.",
-    },
-    {
-      label: "Recruiter / Interview Activity — full activity history",
-      id: NOTION_COLLECTIONS.recruiter_interview_activity,
-      type: "collection" as const,
-      note: company ? `Filter by company: "${company}" if possible.` : "Fetch all recent entries.",
-    },
-    {
-      label: "Stories (STAR) — achievement bank",
-      id: NOTION_PAGES.stories_star,
-      type: "page" as const,
-    },
-  ];
+  writePatterns(analysis);
 
-  if (companyPage) {
-    notionItems.push({
-      label: `${company} prep page (background context — may be outdated or unrefined)`,
-      id: companyPage.id,
-      type: "page" as const,
-      background_only: true,
-      note: "Contains postmortem and prep notes — useful for per-company pattern analysis.",
-    });
-  }
-
-  return {
-    task: `Diagnose interview performance patterns for Ryan K. McDonald${company ? ` — company scope: ${company}` : " — all interviews"}.`,
-    system_prompt: SYSTEM,
-    instructions: [
-      "Fetch each item in notion_context using the Notion MCP fetch/query tools.",
-      "MAANG Behavioral Story Map has gap scores — use these to identify themes with missing or weak stories.",
-      "Recruiter Activity DB has interview outcomes and recruiter feedback — surface patterns from that history.",
-      "After fetching Notion data, combine with local_context notes and generate the full diagnosis per system_prompt.",
-      "After generating the analysis, save it using mcp__brain-os__remember (type=insight, label=interview-patterns) so daily briefings can surface it.",
-    ],
-    notion_context: buildNotionContext(notionItems),
-    local_context: localContext,
-  };
+  return analysis;
 }

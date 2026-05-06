@@ -2,7 +2,8 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
 import { readCompanyContext } from "../context.js";
-import { NOTION_PAGES, NOTION_COLLECTIONS, buildNotionContext, getCompanyPageId, getNarrativePageId } from "../notion.js";
+import { callModel } from "../llm.js";
+import { notion, NOTION_PAGES, NOTION_COLLECTIONS } from "../notion-client.js";
 
 const SYSTEM = `You are the interview prep coach for Ryan K. McDonald — Senior PM (AI/FinTech/HealthTech), actively interviewing for Senior PM and Head of Product roles in NYC.
 
@@ -14,97 +15,53 @@ Generate a focused interview prep briefing. Include:
 5. 2–3 gaps to research if the pipeline file is thin
 
 Lead with what matters most. Be specific to this company — no generic PM prep advice.
+Notion data is the source of truth — use it over local fallback files when available.`;
 
-Notion data is the source of truth — use the Interview Tracker for real pipeline status, stories from the STAR page for answer material.`;
-
-export function runPrep(company: string): object {
+export async function runPrep(company: string): Promise<string> {
   const slug = company.toLowerCase().replace(/\s+/g, "-");
 
+  // Notion: live pipeline entry + rich career context
+  const [trackerEntry, resume, stories, coreWhy, maangRubric] = await Promise.all([
+    notion.queryDatabase(NOTION_COLLECTIONS.interview_tracker, {
+      property: "Company",
+      rich_text: { contains: company },
+    }),
+    notion.fetchPage(NOTION_PAGES.resume),
+    notion.fetchPage(NOTION_PAGES.stories_star),
+    notion.fetchPage(NOTION_PAGES.core_why),
+    notion.fetchPage(NOTION_PAGES.maang_behavioral_map),
+  ]);
+
+  // Background-only: stale company prep pages (may be outdated)
+  const companyPage = notion.getCompanyPageId(company);
+  const narrativePage = notion.getNarrativePageId(company);
+  const [companyPrepContext, narrativeContext] = await Promise.all([
+    companyPage ? notion.fetchPageSafe(companyPage.id) : Promise.resolve(""),
+    narrativePage ? notion.fetchPageSafe(narrativePage) : Promise.resolve(""),
+  ]);
+
+  // Local fallbacks
   const pipelinePath = join(CAREER_DIR, "pipeline", `${slug}.md`);
-  const pipelineContent = existsSync(pipelinePath)
+  const localPipeline = existsSync(pipelinePath)
     ? readFileSync(pipelinePath, "utf-8")
-    : `No pipeline file at career/pipeline/${slug}.md — use Notion Interview Tracker as source of truth.`;
-
-  const achievements = existsSync(join(CAREER_DIR, "achievements.md"))
-    ? readFileSync(join(CAREER_DIR, "achievements.md"), "utf-8")
-    : "(empty — use Notion Stories (STAR) page as fallback)";
-
-  const resume = existsSync(join(CAREER_DIR, "resume.md"))
-    ? readFileSync(join(CAREER_DIR, "resume.md"), "utf-8")
-    : "(empty — use Notion Resume page as fallback)";
-
+    : "(no local pipeline file)";
   const storedContext = readCompanyContext(company);
 
-  const localContext = [
-    `## Local Pipeline Notes (fallback)\n${pipelineContent}`,
-    `## Local Resume (fallback)\n${resume}`,
-    `## Local Achievements (fallback)\n${achievements}`,
+  const staticContext = [
+    `## Ryan's Resume (Notion)\n${resume}`,
+    `## Ryan's Stories — STAR Achievement Bank (Notion)\n${stories}`,
+    `## Core Why — Positioning & Narrative (Notion)\n${coreWhy}`,
+    `## MAANG Behavioral Rubric & Gap Scores (Notion)\n${maangRubric}`,
+    companyPrepContext ? `## ${company} Prep Page (background — may be outdated)\n${companyPrepContext}` : "",
+    narrativeContext ? `## ${company} Narrative (background — may be outdated)\n${narrativeContext}` : "",
+  ].filter(Boolean).join("\n\n---\n\n");
+
+  const user = [
+    `## Company: ${company}`,
+    `## Interview Tracker Entry (Notion — source of truth)\n${trackerEntry}`,
+    `## Local Pipeline Notes (fallback)\n${localPipeline}`,
     storedContext ? `## Accumulated Intel (context store)\n${storedContext}` : "",
   ].filter(Boolean).join("\n\n---\n\n");
 
-  const companyPage = getCompanyPageId(company);
-  const narrativePage = getNarrativePageId(company);
-
-  const notionItems = [
-    {
-      label: "Interview Tracker — filter to this company",
-      id: NOTION_COLLECTIONS.interview_tracker,
-      type: "collection" as const,
-      note: `Filter by company name: "${company}". Source of truth for status, interview date, recruiter, salary range.`,
-    },
-    {
-      label: "Ryan's Resume",
-      id: NOTION_PAGES.resume,
-      type: "page" as const,
-    },
-    {
-      label: "Stories (STAR) — achievement bank",
-      id: NOTION_PAGES.stories_star,
-      type: "page" as const,
-    },
-    {
-      label: "Core Why — positioning and narrative",
-      id: NOTION_PAGES.core_why,
-      type: "page" as const,
-    },
-    {
-      label: "MAANG Behavioral Story Map — interview rubric and gap scores",
-      id: NOTION_PAGES.maang_behavioral_map,
-      type: "page" as const,
-    },
-  ];
-
-  if (companyPage) {
-    notionItems.push({
-      label: `${company} prep page (background context — may be outdated or unrefined)`,
-      id: companyPage.id,
-      type: "page" as const,
-      background_only: true,
-      note: "Stale braindump — use for enrichment only, not as source of truth.",
-    } as any);
-  }
-
-  if (narrativePage) {
-    notionItems.push({
-      label: `${company} narrative page (background context — may be outdated or unrefined)`,
-      id: narrativePage,
-      type: "page" as const,
-      background_only: true,
-      note: "Per-company STAR narrative — enrich but verify against current stories.",
-    } as any);
-  }
-
-  return {
-    task: `Generate a focused interview prep briefing for Ryan K. McDonald — company: ${company}.`,
-    system_prompt: SYSTEM,
-    instructions: [
-      "Fetch each item in notion_context using the Notion MCP fetch/query tools.",
-      `For the Interview Tracker collection, filter or search for entries matching company name "${company}".`,
-      "Use the Notion Resume and Stories (STAR) page as primary source for Ryan's background — prefer over local fallback.",
-      "Background-only pages are stale braindumps — use for enrichment signal, not authoritative facts.",
-      "After fetching Notion data, assemble all context and generate the prep briefing per the system_prompt.",
-    ],
-    notion_context: buildNotionContext(notionItems),
-    local_context: localContext,
-  };
+  return callModel("balanced", SYSTEM, user, staticContext);
 }

@@ -13,15 +13,15 @@ import { runStoryDraft } from "./tools/story_draft.js";
 import { runLoop } from "./tools/loop.js";
 import { runRemember } from "./tools/remember.js";
 
-// All tools are context-loaders — return structured JSON task objects for Claude to act on.
-// Claude fetches Notion data, assembles context, then generates the final output in-session.
-function toolResponse(result: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
-}
-
-// Kept for any future direct-generation tools that don't need Notion context.
+// Direct-generation tools call Notion + Claude internally and return finished text.
 function generatedResponse(text: string) {
   return { content: [{ type: "text" as const, text }] };
+}
+
+// Context-loader tools return structured JSON task objects for Claude to act on
+// (scan, intel, proctor, loop, story_draft — need web search or multi-turn interaction).
+function toolResponse(result: unknown) {
+  return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
 }
 
 export function createServer(): McpServer {
@@ -34,7 +34,7 @@ export function createServer(): McpServer {
     "daily",
     "Morning brief — loads job pipeline, writing queue, and project context into a structured daily summary. Run this at the start of each day.",
     {},
-    () => toolResponse(runDaily())
+    async () => generatedResponse(await runDaily())
   );
 
   server.tool(
@@ -43,7 +43,7 @@ export function createServer(): McpServer {
     {
       company: z.string().describe("Company name to prep for (e.g. 'Stripe'). Matches against career/pipeline/{company-name}.md — use the same slug if the file exists."),
     },
-    ({ company }) => toolResponse(runPrep(company))
+    async ({ company }) => generatedResponse(await runPrep(company))
   );
 
   server.tool(
@@ -52,7 +52,7 @@ export function createServer(): McpServer {
     {
       jd: z.string().describe("Full job description text to analyze against career/resume.md."),
     },
-    ({ jd }) => toolResponse(runApply(jd))
+    async ({ jd }) => generatedResponse(await runApply(jd))
   );
 
   server.tool(
@@ -72,7 +72,7 @@ export function createServer(): McpServer {
     {
       company: z.string().describe("Company name to analyze fit against (e.g. 'Anthropic', 'Plaid')."),
     },
-    ({ company }) => toolResponse(runFit(company))
+    async ({ company }) => generatedResponse(await runFit(company))
   );
 
   server.tool(
@@ -92,7 +92,7 @@ export function createServer(): McpServer {
       target_person: z.string().optional().describe("Specific person to contact (name + title if known). If omitted, the tool will identify the best contact."),
       role: z.string().optional().describe("Specific role you're targeting (e.g. 'Senior PM, Growth'). Sharpens the message angle."),
     },
-    ({ company, target_person, role }) => toolResponse(runOutreach(company, target_person, role))
+    async ({ company, target_person, role }) => generatedResponse(await runOutreach(company, target_person, role))
   );
 
   server.tool(
@@ -119,7 +119,7 @@ export function createServer(): McpServer {
     {
       company: z.string().optional().describe("Filter to a specific company's notes. Omit to analyze all interviews."),
     },
-    ({ company }) => toolResponse(runDiagnose(company))
+    async ({ company }) => generatedResponse(await runDiagnose(company))
   );
 
   server.tool(

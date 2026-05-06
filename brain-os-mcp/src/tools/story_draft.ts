@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
 import { writeStory, readStory } from "../context.js";
-import { NOTION_PAGES, NOTION_NARRATIVE_PAGES, buildNotionContext } from "../notion.js";
+import { notion, NOTION_PAGES, NOTION_NARRATIVE_PAGES } from "../notion-client.js";
 
 type StoryTheme =
   | "leadership"
@@ -58,8 +58,7 @@ const MINING_QUESTIONS: Record<string, string[]> = {
   ],
 };
 
-export function runStoryDraft(theme: StoryTheme, existingStory?: string): object {
-  // Seed or load existing story context from the store
+export async function runStoryDraft(theme: StoryTheme, existingStory?: string): Promise<object> {
   const themes = theme === "all" ? Object.keys(MINING_QUESTIONS) : [theme];
   const storedStories: Record<string, string> = {};
   for (const t of themes) {
@@ -69,6 +68,7 @@ export function runStoryDraft(theme: StoryTheme, existingStory?: string): object
   if (!existingStory && themes.length === 1) {
     writeStory(themes[0], `Mining session initiated. Story pending.`);
   }
+
   const resumePath = join(CAREER_DIR, "resume.md");
   const achievementsPath = join(CAREER_DIR, "achievements.md");
   const portfolioPath = join(CAREER_DIR, "portfolio.md");
@@ -78,6 +78,17 @@ export function runStoryDraft(theme: StoryTheme, existingStory?: string): object
   const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
   const portfolio = existsSync(portfolioPath) ? readFileSync(portfolioPath, "utf-8") : "(empty)";
   const voice = existsSync(voicePath) ? readFileSync(voicePath, "utf-8") : "(empty)";
+
+  // Fetch Notion narrative pages — background context for story mining
+  const [starStories, yahooNarrative, splunkNarrative, cognizantNarrative, boaNarrative, ascendventNarrative] =
+    await Promise.all([
+      notion.fetchPageSafe(NOTION_PAGES.stories_star),
+      notion.fetchPageSafe(NOTION_NARRATIVE_PAGES["yahoo"]),
+      notion.fetchPageSafe(NOTION_NARRATIVE_PAGES["splunk"]),
+      notion.fetchPageSafe(NOTION_NARRATIVE_PAGES["cognizant"]),
+      notion.fetchPageSafe(NOTION_NARRATIVE_PAGES["bank-of-america"]),
+      notion.fetchPageSafe(NOTION_NARRATIVE_PAGES["ascendvent"]),
+    ]);
 
   const questions =
     theme === "all"
@@ -124,52 +135,13 @@ export function runStoryDraft(theme: StoryTheme, existingStory?: string): object
       achievements,
       portfolio,
       voice_guide: voice,
-      note: "Draft all stories in Ryan's voice — match the tone, rhythm, and word choices from the voice guide. Don't sanitize or make it sound like a press release.",
+      star_stories_notion: starStories,
+      yahoo_narrative: yahooNarrative,
+      splunk_narrative: splunkNarrative,
+      cognizant_narrative: cognizantNarrative,
+      bank_of_america_narrative: boaNarrative,
+      ascendvent_narrative: ascendventNarrative,
+      note: "Draft all stories in Ryan's voice — match the tone, rhythm, and word choices from the voice guide. Don't sanitize or make it sound like a press release. Per-company narratives are background — stale braindumps, use for raw material only.",
     },
-
-    notion_context: buildNotionContext([
-      {
-        label: "Stories (STAR) — master achievement bank",
-        id: NOTION_PAGES.stories_star,
-        type: "page",
-        note: "Primary source for existing STAR stories — read before drafting to avoid duplicating or contradicting what's already written.",
-      },
-      {
-        label: "Yahoo narrative (background — may be outdated)",
-        id: NOTION_NARRATIVE_PAGES["yahoo"],
-        type: "page",
-        background_only: true,
-      },
-      {
-        label: "Splunk narrative (background — may be outdated)",
-        id: NOTION_NARRATIVE_PAGES["splunk"],
-        type: "page",
-        background_only: true,
-      },
-      {
-        label: "Cognizant narrative (background — may be outdated)",
-        id: NOTION_NARRATIVE_PAGES["cognizant"],
-        type: "page",
-        background_only: true,
-      },
-      {
-        label: "Bank of America narrative (background — may be outdated)",
-        id: NOTION_NARRATIVE_PAGES["bank-of-america"],
-        type: "page",
-        background_only: true,
-      },
-      {
-        label: "Ascendvent narrative (background — may be outdated)",
-        id: NOTION_NARRATIVE_PAGES["ascendvent"],
-        type: "page",
-        background_only: true,
-      },
-    ]),
-
-    notion_instructions: [
-      "Fetch the Stories (STAR) page first — it's the primary story corpus. Read all existing stories before mining new ones.",
-      "Per-company narrative pages are background context — stale braindumps. Use for raw material only; verify details with Ryan.",
-      "After a story is finalized, save it using mcp__brain-os__remember (type=story, label=<theme>) to persist it.",
-    ],
   };
 }

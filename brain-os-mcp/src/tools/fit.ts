@@ -1,7 +1,8 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
-import { NOTION_PAGES, NOTION_COLLECTIONS, buildNotionContext } from "../notion.js";
+import { callModel } from "../llm.js";
+import { notion, NOTION_PAGES, NOTION_COLLECTIONS } from "../notion-client.js";
 
 const SYSTEM = `You are a talent and company-fit analyst evaluating Ryan K. McDonald as a PM candidate.
 
@@ -21,8 +22,18 @@ Verdict: Prioritize / Worth Pursuing / Pass — one sentence.
 Be specific to this company. Use Ryan's actual experience, not generic PM attributes.
 Use Notion Resume, Core Why, and Rates Discovery as primary sources over local files.`;
 
-export function runFit(company: string): object {
+export async function runFit(company: string): Promise<string> {
   const slug = company.toLowerCase().replace(/\s+/g, "-");
+
+  const [resume, coreWhy, rates, trackerEntry] = await Promise.all([
+    notion.fetchPage(NOTION_PAGES.resume),
+    notion.fetchPage(NOTION_PAGES.core_why),
+    notion.fetchPage(NOTION_PAGES.rates_discovery),
+    notion.queryDatabase(NOTION_COLLECTIONS.interview_tracker, {
+      property: "Company",
+      rich_text: { contains: company },
+    }),
+  ]);
 
   const localResume = existsSync(join(CAREER_DIR, "resume.md"))
     ? readFileSync(join(CAREER_DIR, "resume.md"), "utf-8")
@@ -37,35 +48,20 @@ export function runFit(company: string): object {
     ? readFileSync(join(CAREER_DIR, "pipeline", `${slug}.md`), "utf-8")
     : `No pipeline file yet for ${company} — use Interview Tracker DB.`;
 
-  const localContext = [
+  const staticContext = [
+    `## Ryan's Resume (Notion)\n${resume}`,
+    `## Core Why — Positioning & Narrative (Notion)\n${coreWhy}`,
+    `## Rates Discovery — Compensation Anchors (Notion)\n${rates}`,
+  ].join("\n\n---\n\n");
+
+  const user = [
+    `## Company: ${company}`,
+    `## Interview Tracker Entry (Notion)\n${trackerEntry}`,
     `## Local Resume (fallback)\n${localResume}`,
     `## Local Achievements (fallback)\n${localAchievements}`,
     `## Job Criteria (what Ryan is looking for)\n${criteria}`,
     `## Local Pipeline Notes (fallback)\n${pipelineContent}`,
   ].join("\n\n---\n\n");
 
-  return {
-    task: `Score Ryan K. McDonald's fit for ${company} across 5 dimensions and return a verdict.`,
-    system_prompt: SYSTEM,
-    instructions: [
-      "Fetch each item in notion_context using the Notion MCP fetch/query tools.",
-      `For the Interview Tracker, look for an entry matching company: "${company}" to get real pipeline status.`,
-      "Use Notion Resume as primary source for Ryan's background.",
-      "Use Rates Discovery to contextualize comp expectations vs. company stage.",
-      "Use Core Why to understand Ryan's positioning — helps frame the 'uniquely relevant angles' section.",
-      "After fetching, generate the full fit analysis per system_prompt.",
-    ],
-    notion_context: buildNotionContext([
-      { label: "Ryan's Resume", id: NOTION_PAGES.resume, type: "page" },
-      { label: "Core Why — positioning and narrative", id: NOTION_PAGES.core_why, type: "page" },
-      { label: "Rates Discovery — compensation anchors", id: NOTION_PAGES.rates_discovery, type: "page" },
-      {
-        label: "Interview Tracker — check for existing pipeline entry",
-        id: NOTION_COLLECTIONS.interview_tracker,
-        type: "collection",
-        note: `Filter by company: "${company}" if an entry exists.`,
-      },
-    ]),
-    local_context: localContext,
-  };
+  return callModel("balanced", SYSTEM, user, staticContext);
 }

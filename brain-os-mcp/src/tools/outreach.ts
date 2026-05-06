@@ -2,7 +2,8 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
 import { appendOutreachLog, readCompanyContext } from "../context.js";
-import { NOTION_PAGES, NOTION_COLLECTIONS, buildNotionContext } from "../notion.js";
+import { callModel } from "../llm.js";
+import { notion, NOTION_PAGES } from "../notion-client.js";
 
 const SYSTEM = `You are an outreach strategist for Ryan K. McDonald — Senior PM (AI/FinTech/HealthTech), founder of Ascendvent/AOSI, based in NYC, actively targeting Senior PM and Head of Product roles.
 
@@ -23,29 +24,37 @@ Deliver:
 
 Use Notion Resume, Core Why, and Recruiter Vetting Checklist as primary sources.`;
 
-export function runOutreach(
+export async function runOutreach(
   company: string,
   targetPerson?: string,
   role?: string
-): object {
+): Promise<string> {
   const slug = company.toLowerCase().replace(/\s+/g, "-");
 
   appendOutreachLog(company, targetPerson ?? "", "drafting", `Outreach drafts generated${role ? ` for ${role}` : ""}.`);
 
+  const [coreWhy, resume, recruiterVetting] = await Promise.all([
+    notion.fetchPage(NOTION_PAGES.core_why),
+    notion.fetchPage(NOTION_PAGES.resume),
+    notion.fetchPage(NOTION_PAGES.recruiter_vetting_checklist),
+  ]);
+
   const voice = existsSync(join(CAREER_DIR, "voice-and-style.md"))
     ? readFileSync(join(CAREER_DIR, "voice-and-style.md"), "utf-8")
     : "(empty — add voice guide to career/voice-and-style.md)";
-  const localResume = existsSync(join(CAREER_DIR, "resume.md"))
-    ? readFileSync(join(CAREER_DIR, "resume.md"), "utf-8")
-    : "(empty — use Notion Resume page as source of truth)";
   const pipelineContent = existsSync(join(CAREER_DIR, "pipeline", `${slug}.md`))
     ? readFileSync(join(CAREER_DIR, "pipeline", `${slug}.md`), "utf-8")
     : null;
   const storedContext = readCompanyContext(company);
 
-  const localContext = [
+  const staticContext = [
+    `## Core Why — Positioning & Narrative (Notion)\n${coreWhy}`,
+    `## Ryan's Resume (Notion)\n${resume}`,
+    `## Recruiter Vetting Checklist — What Ryan Looks For (Notion)\n${recruiterVetting}`,
     `## Voice Guide (local)\n${voice}`,
-    `## Local Resume (fallback)\n${localResume}`,
+  ].join("\n\n---\n\n");
+
+  const user = [
     `## Company: ${company}`,
     targetPerson ? `## Target Person: ${targetPerson}` : "",
     role ? `## Target Role: ${role}` : "",
@@ -53,22 +62,5 @@ export function runOutreach(
     storedContext ? `## Accumulated Intel\n${storedContext}` : "",
   ].filter(Boolean).join("\n\n---\n\n");
 
-  return {
-    task: `Generate outreach strategy and message drafts for Ryan K. McDonald targeting ${company}${targetPerson ? ` — contact: ${targetPerson}` : ""}${role ? ` — role: ${role}` : ""}.`,
-    system_prompt: SYSTEM,
-    instructions: [
-      "Fetch each item in notion_context using the Notion MCP fetch/query tools.",
-      "Core Why tells you Ryan's narrative positioning — use it to find the sharpest outreach angle.",
-      "Recruiter Vetting Checklist tells you what Ryan looks for in companies — use it to personalize the message.",
-      "Resume gives specific proof points for the message.",
-      "Voice Guide is in local_context — match tone and style when drafting messages.",
-      "After fetching Notion data, generate the full outreach strategy per system_prompt.",
-    ],
-    notion_context: buildNotionContext([
-      { label: "Core Why — positioning and narrative", id: NOTION_PAGES.core_why, type: "page" },
-      { label: "Ryan's Resume", id: NOTION_PAGES.resume, type: "page" },
-      { label: "Recruiter Vetting Checklist — what Ryan looks for", id: NOTION_PAGES.recruiter_vetting_checklist, type: "page" },
-    ]),
-    local_context: localContext,
-  };
+  return callModel("balanced", SYSTEM, user, staticContext);
 }

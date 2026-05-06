@@ -1,7 +1,8 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { CAREER_DIR } from "../config.js";
-import { NOTION_PAGES, buildNotionContext } from "../notion.js";
+import { callModel } from "../llm.js";
+import { notion, NOTION_PAGES } from "../notion-client.js";
 
 const SYSTEM = `You are a senior PM career strategist working with Ryan K. McDonald to produce application materials that could actually get him hired.
 
@@ -13,48 +14,31 @@ Your job:
 3. Cover letter — 3 tight paragraphs. No generic opener ("I am excited to apply..."). Open with the most compelling specific reason Ryan is right for this role. Second paragraph: the most relevant proof point from his career. Third paragraph: why this company specifically — not flattery, a real reason. Must be in Ryan's voice (see voice guide).
 4. Top 2 gaps to address — either acknowledge in the letter or prepare to answer in screening.
 
-The hiring manager reading this has seen 200 cover letters this month. Write something that makes them stop scrolling.
+The hiring manager reading this has seen 200 cover letters this month. Write something that makes them stop scrolling.`;
 
-Notion data is the source of truth — use the fetched Resume, Stories, Core Why, and Rates pages over local fallback files.`;
+export async function runApply(jd: string): Promise<string> {
+  // Notion: primary source for resume, stories, positioning, comp anchors
+  const [resume, stories, coreWhy, rates] = await Promise.all([
+    notion.fetchPage(NOTION_PAGES.resume),
+    notion.fetchPage(NOTION_PAGES.stories_star),
+    notion.fetchPage(NOTION_PAGES.core_why),
+    notion.fetchPage(NOTION_PAGES.rates_discovery),
+  ]);
 
-export function runApply(jd: string): object {
+  // Local: voice guide (no Notion equivalent)
   const voice = existsSync(join(CAREER_DIR, "voice-and-style.md"))
     ? readFileSync(join(CAREER_DIR, "voice-and-style.md"), "utf-8")
     : "(voice guide is empty — add writing samples to career/voice-and-style.md)";
 
-  const localResume = existsSync(join(CAREER_DIR, "resume.md"))
-    ? readFileSync(join(CAREER_DIR, "resume.md"), "utf-8")
-    : "(empty — use Notion Resume page as source of truth)";
-
-  const localAchievements = existsSync(join(CAREER_DIR, "achievements.md"))
-    ? readFileSync(join(CAREER_DIR, "achievements.md"), "utf-8")
-    : "(empty — use Notion Stories (STAR) page as fallback)";
-
-  const localContext = [
+  const staticContext = [
+    `## Ryan's Resume (Notion)\n${resume}`,
+    `## Ryan's Stories — STAR Achievement Bank (Notion)\n${stories}`,
+    `## Core Why — Positioning & Narrative (Notion)\n${coreWhy}`,
+    `## Rates Discovery — Compensation Anchors (Notion)\n${rates}`,
     `## Voice Guide (local)\n${voice}`,
-    `## Local Resume (fallback)\n${localResume}`,
-    `## Local Achievements (fallback)\n${localAchievements}`,
-    `## Job Description\n${jd}`,
   ].join("\n\n---\n\n");
 
-  return {
-    task: "Generate a gap analysis and cover letter for Ryan K. McDonald based on the job description.",
-    system_prompt: SYSTEM,
-    instructions: [
-      "Fetch each item in notion_context using the Notion MCP fetch/query tools.",
-      "Use Notion Resume as the primary resume source — it is more current than the local file.",
-      "Use Stories (STAR) for achievement material and Core Why for positioning narrative.",
-      "Use Rates Discovery to anchor compensation expectations if the JD mentions comp.",
-      "Voice Guide is in local_context — match Ryan's tone when drafting the cover letter.",
-      "After fetching Notion data, generate the gap analysis and cover letter per system_prompt.",
-      "Model tier: use Claude claude-opus-4-7 (powerful) for this task — it is a high-stakes output.",
-    ],
-    notion_context: buildNotionContext([
-      { label: "Ryan's Resume", id: NOTION_PAGES.resume, type: "page" },
-      { label: "Stories (STAR) — achievement bank", id: NOTION_PAGES.stories_star, type: "page" },
-      { label: "Core Why — positioning and narrative", id: NOTION_PAGES.core_why, type: "page" },
-      { label: "Rates Discovery — compensation anchors", id: NOTION_PAGES.rates_discovery, type: "page" },
-    ]),
-    local_context: localContext,
-  };
+  const user = `## Job Description\n${jd}`;
+
+  return callModel("powerful", SYSTEM, user, staticContext);
 }
