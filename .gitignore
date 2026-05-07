@@ -7,3 +7,10 @@ dist/
 *.jpeg
 .claude/settings.local.json
 .vscode/
+
+# Auto-generated session files — local context only, not committed to git
+context/sessions/*-auto-*.md
+context/sessions/archive/
+
+# Test files
+test_notion_write.js

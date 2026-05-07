@@ -44,7 +44,9 @@
       "Read(//Users/rmcdonald/.claude/**)",
       "Bash(cat)",
       "Read(//tmp/**)",
-      "mcp__claude_ai_Notion__notion-query-database-view"
+      "mcp__claude_ai_Notion__notion-query-database-view",
+      "Bash(git push *)",
+      "Bash(chmod +x /Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/archive-old-sessions.sh)"
     ]
   },
   "hooks": {
