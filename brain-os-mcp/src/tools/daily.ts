@@ -159,7 +159,6 @@ export async function runDaily(options: DailyOptions = {}): Promise<string> {
   const ideasPath = join(WRITING_DIR, "ideas.md");
   const ideas = existsSync(ideasPath) ? readFileSync(ideasPath, "utf-8") : "(no ideas file)";
 
-  const recentSessions = readRecentSessions(3);
   const patterns = readPatterns();
 
   const user = [
@@ -170,7 +169,6 @@ export async function runDaily(options: DailyOptions = {}): Promise<string> {
     `## Current Decisions on the Table\n${landARolePlan}`,
     `## Focus Alignment\n${focusScorecard}`,
     `## Active Projects\n${projectStatus}`,
-    patterns ? `## Interview Pattern to Drill Today\n${patterns}` : "",
   ]
     .filter(Boolean)
     .join("\n\n---\n\n");
