@@ -24,7 +24,7 @@ export const NOTION_COLLECTIONS = {
   recruiter_interview_activity: "3497328f-2da5-814a-a567-000b61706a70",
   unemployment_activities: "33c5dfaf-439b-47dc-985c-0a2f2c29a70b",
   weekly_unemployment_tracker: "bef6377c-8d16-401c-b753-3f4d0a82ce67",
-  prep_materials_work: "c0199274-36c6-4a71-9ec3-a876673e7067",
+  prep_materials_work: "42daec0a-4250-4917-aad3-e7ca9ce8a498",
 } as const;
 
 // Per-company prep pages — stale braindumps, use as background context only
@@ -190,6 +190,53 @@ export class NotionService {
 
   getNarrativePageId(company: string): string | null {
     return NOTION_NARRATIVE_PAGES[slugify(company)] ?? null;
+  }
+
+  // Create a prep material record in the prep_materials_work database
+  async createPrepMaterial(
+    company: string,
+    tool: "prep" | "apply",
+    output: string,
+    gapAnalysis?: string,
+    coverLetter?: string
+  ): Promise<string> {
+    if (!this.available) return "(unavailable: NOTION_TOKEN not set)";
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const properties: Record<string, any> = {
+        Company: { title: [{ text: { content: company } }] },
+        Tool: { select: { name: tool } },
+        Date: { date: { start: today } },
+        Status: { select: { name: "draft" } },
+      };
+
+      // Add tool-specific outputs
+      if (tool === "prep") {
+        properties["Prep Output"] = {
+          rich_text: [{ text: { content: output.substring(0, 2000) } }],
+        };
+      } else if (tool === "apply") {
+        if (gapAnalysis) {
+          properties["Gap Analysis"] = {
+            rich_text: [{ text: { content: gapAnalysis.substring(0, 2000) } }],
+          };
+        }
+        if (coverLetter) {
+          properties["Cover Letter"] = {
+            rich_text: [{ text: { content: coverLetter.substring(0, 2000) } }],
+          };
+        }
+      }
+
+      await (this.client.pages as any).create({
+        parent: { database_id: NOTION_COLLECTIONS.prep_materials_work },
+        properties,
+      });
+
+      return `✓ Saved to prep_materials_work: ${company} (${tool})`;
+    } catch (err: any) {
+      return `(write failed: ${err?.message ?? "Notion create failed"})`;
+    }
   }
 }
 

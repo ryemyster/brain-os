@@ -2,6 +2,26 @@
 
 One-paragraph summary of every active repo. Update this when a project's status or purpose shifts significantly. BrainOS `daily` reads this for active project context.
 
+## Quick status reference (updated 2026-05-07)
+
+| Project | gh account | Last commit | Top open issue |
+| ------- | ---------- | ----------- | -------------- |
+| checkin-ascendvent | ascendvent | 2026-05-07 — Apple-inspired landing overhaul | #394: downgrade client locking logic |
+| brain-os | ryemyster | 2026-05-07 — Calendar/Gmail wired into daily | Stop hook + session persistence |
+| portfolio | ryemyster | 2026-05-06 — new resume | #19: surface Ascendvent pivot as headline |
+| frompixelstopunk | ryemyster | 2026-05-04 — punk succession post | #85: archive search/filter |
+| techyeet-gaming | ryemyster | 2026-05-04 — May 2026 content | #2: mobile responsive audit |
+| vscode-themes-vibecoded | ryemyster | 2026-05-05 — Claude context guide | #10: theme preview gallery |
+| ascendvent-home | ascendvent | 2026-05-05 — typo fix | No issues tracked |
+| founderos | ascendvent | 2026-04-27 — version sync | #12: semantic search (P0), #9: synthesize_thesis tool (P0) |
+| SevenSharp | ascendvent | 2026-04-28 — toolchain cleanup | #54: external services setup blocks everything |
+| ascendvent-planning | ascendvent | 2026-04-19 — silent launch marked | Local-only repo, no issue tracker |
+| ShaleYeah | ryemyster | 2026-04-18 — cleanup/research | #315: split index.ts god class |
+| small-language-models-for-pms | ryemyster | 2026-04-06 — core files | #7: repo hygiene |
+| autoresearch | ryemyster | — | No git repo |
+
+**gh account routing:** `ascendvent/` repos → use ascendvent account. All others → ryemyster. Script: `.claude/scripts/gh-brain-os.sh`
+
 ---
 
 ## Ascendvent (Brand + Planning)

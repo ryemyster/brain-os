@@ -63,5 +63,10 @@ export async function runPrep(company: string): Promise<string> {
     storedContext ? `## Accumulated Intel (context store)\n${storedContext}` : "",
   ].filter(Boolean).join("\n\n---\n\n");
 
-  return callModel("balanced", SYSTEM, user, staticContext);
+  const prepOutput = await callModel("balanced", SYSTEM, user, staticContext);
+
+  // Write to Notion after generating the output
+  await notion.createPrepMaterial(company, "prep", prepOutput);
+
+  return prepOutput;
 }

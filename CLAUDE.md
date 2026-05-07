@@ -56,11 +56,11 @@ Full context in `projects/index.md`. Quick reference:
 
 ## BrainOS tools
 
-MCP server registered as `brain-os`. Job hunt workflow detail in `.claude/skills/job-search.md`.
+MCP server registered as `brain-os-mcp`. Job hunt workflow detail in `.claude/skills/job-search.md`.
 
 | Tool | What it does |
 |------|-------------|
-| `daily` | Morning brief — pipeline status, writing queue, focus items |
+| `daily` | Morning brief — pipeline status, writing queue, focus items. **Pre-fetch required:** call `mcp__claude_ai_Google_Calendar__list_events` (next 7 days) and `mcp__claude_ai_Gmail__search_threads` (job-related, last 7 days) first, pass results as `calendarEvents` and `gmailThreads` |
 | `scan` | Proactive opportunity scan — NYC AI/FinTech/HealthTech PM roles |
 | `intel` | Company intelligence — funding, NYC presence, PM org, product direction |
 | `fit` | Fit scoring across 5 dimensions for a specific company |
@@ -81,11 +81,11 @@ If tools aren't responding: `npm run build` inside `brain-os-mcp/`, verify regis
 
 | Integration | Status | Use |
 |-------------|--------|-----|
-| BrainOS | Active | Daily workflow, job hunt automation |
+| BrainOS | Active | Daily workflow, job hunt automation|
 | FounderOS | Active | Product discovery — use in `ascendvent-planning/` |
 | Notion | Active | Pipeline tracker, project notes |
-| Gmail | Needs OAuth | Application follow-ups |
-| Google Calendar | Needs OAuth | Interview scheduling |
+| Gmail | Active | Application follow-ups — pre-fetch for `daily` |
+| Google Calendar | Active | Interview scheduling — pre-fetch for `daily` |
 | Google Drive | Needs OAuth | Document storage |
 | GitHub | Phase 4 | Repo activity across all projects |
 | Google Analytics | Phase 4 | Writing performance |
@@ -99,10 +99,22 @@ Phase 4: `daily` pulls Calendar + Gmail, `prep`/`apply` writes back to Notion, G
 | Layer | Location | Status |
 |-------|----------|--------|
 | Skills | `.claude/skills/` | `job-search.md`, `doc-coauthoring.md` active — see READMEs |
-| Hooks | `.claude/rules/` | None configured — see README for examples |
+| Hooks | `.claude/settings.json` | `Stop` fires `session-write.sh` automatically; `PostToolUse` prompts `remember` after intel/fit/prep/apply/outreach/story_draft/diagnose/scan |
 | Agents | `.claude/agents/` | Not started — see README for concept |
 
-Memory: `context/` is written automatically by tools. Phase 5 adds LanceDB semantic search (issue #9).
+Memory: `context/sessions/` gets an auto-written note at the end of every session via Stop hook. Phase 5 adds LanceDB semantic search (issue #9).
+
+## GitHub multi-account
+
+Two gh accounts: `ryemyster` (default) and `ascendvent`. SSH aliases configured in `~/.ssh/config`.
+
+- **For git operations:** remotes use `git@github-ryemyster:` and `git@github-ascendvent:` — no manual switching needed
+- **For gh CLI calls:** use `.claude/scripts/gh-brain-os.sh` instead of `gh` directly — it auto-switches account based on `--repo` org, then restores ryemyster as default
+- **Account mapping:** `ascendvent/` org → ascendvent account; everything else → ryemyster
+
+Repos under `ascendvent/`: SevenSharp, ascendvent-home, ascendvent-planning, founderos, checkin-ascendvent (`ascendvent-planning/projects/checkin-ascendvent/`)
+
+All 13 project statuses tracked in `projects/index.md`.
 
 ---
 
@@ -115,3 +127,4 @@ Memory: `context/` is written automatically by tools. Phase 5 adds LanceDB seman
 - Pasted JD → run `apply` workflow automatically.
 - Company name alone → assume `prep` workflow.
 - Empty career files → ask to fill them, never hallucinate content.
+- At the end of every substantive session, call `remember` with `type=session` to persist what was learned. Do not skip this. The Stop hook will prompt if it was missed.

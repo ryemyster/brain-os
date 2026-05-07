@@ -40,5 +40,21 @@ export async function runApply(jd: string): Promise<string> {
 
   const user = `## Job Description\n${jd}`;
 
-  return callModel("powerful", SYSTEM, user, staticContext);
+  const applyOutput = await callModel("powerful", SYSTEM, user, staticContext);
+
+  // Extract company name from JD and write to Notion
+  // Heuristic: look for company name in first paragraph or common patterns
+  const companyMatch = jd.match(/(?:at|by|for)\s+([A-Z][A-Za-z\s&-]+?)(?:\s+(?:is\s+hiring|seeks|is\s+looking|posted)|\n|$)/);
+  const company = companyMatch ? companyMatch[1].trim() : "Unknown Company";
+
+  // Parse out gap analysis and cover letter sections if present
+  const gapMatch = applyOutput.match(/(?:Gap Analysis|Gaps?|Differences?)[:\s]*(.+?)(?:Cover Letter|Resume|$)/is);
+  const letterMatch = applyOutput.match(/(?:Cover Letter)[:\s]*(.+?)(?:Resume|Questions|$)/is);
+
+  const gapAnalysis = gapMatch ? gapMatch[1].substring(0, 2000) : undefined;
+  const coverLetter = letterMatch ? letterMatch[1].substring(0, 2000) : undefined;
+
+  await notion.createPrepMaterial(company, "apply", applyOutput, gapAnalysis, coverLetter);
+
+  return applyOutput;
 }

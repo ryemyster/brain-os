@@ -32,9 +32,12 @@ export function createServer(): McpServer {
 
   server.tool(
     "daily",
-    "Morning brief — loads job pipeline, writing queue, and project context into a structured daily summary. Run this at the start of each day.",
-    {},
-    async () => generatedResponse(await runDaily())
+    "Morning brief — loads job pipeline, writing queue, and project context into a structured daily summary. Run this at the start of each day. Before calling, fetch calendar events for the next 7 days via mcp__claude_ai_Google_Calendar__list_events and job-related Gmail threads via mcp__claude_ai_Gmail__search_threads, then pass them as calendarEvents and gmailThreads.",
+    {
+      calendarEvents: z.string().optional().describe("Serialized calendar events for the next 7 days from Google Calendar MCP (JSON string or formatted list)."),
+      gmailThreads: z.string().optional().describe("Serialized job-related email threads from Gmail MCP (JSON string or formatted list)."),
+    },
+    async ({ calendarEvents, gmailThreads }) => generatedResponse(await runDaily({ calendarEvents, gmailThreads }))
   );
 
   server.tool(
