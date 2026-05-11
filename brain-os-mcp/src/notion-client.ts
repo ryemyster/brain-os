@@ -20,11 +20,11 @@ export const NOTION_PAGES = {
 
 // Database IDs — plain UUIDs (collection:// prefix stripped)
 export const NOTION_COLLECTIONS = {
-  interview_tracker: "3497328f-2da5-8027-8b46-000bb6527328",
-  recruiter_interview_activity: "3497328f-2da5-814a-a567-000b61706a70",
+  interview_tracker: "3497328f-2da5-8049-87f2-f580e48c03c5",
+  recruiter_interview_activity: "3497328f-2da5-80ae-897d-c84d8ddb61f4",
   unemployment_activities: "33c5dfaf-439b-47dc-985c-0a2f2c29a70b",
-  weekly_unemployment_tracker: "bef6377c-8d16-401c-b753-3f4d0a82ce67",
-  prep_materials_work: "42daec0a-4250-4917-aad3-e7ca9ce8a498",
+  weekly_unemployment_tracker: "cce45c21-05ea-406d-a9e0-518aa9a42e14",
+  prep_materials_work: "8a0c6331-fcf4-44be-9677-95ac1e791fa0",
 } as const;
 
 // Per-company prep pages — stale braindumps, use as background context only
