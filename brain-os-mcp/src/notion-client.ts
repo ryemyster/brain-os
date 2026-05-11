@@ -18,7 +18,7 @@ export const NOTION_PAGES = {
   interview_tracker_page: "20a7328f2da580738d08d57847e09875",
 } as const;
 
-// Database IDs — plain UUIDs (collection:// prefix stripped)
+// Database IDs — full UUIDs with dashes (required by Notion API)
 export const NOTION_COLLECTIONS = {
   interview_tracker: "3497328f-2da5-8049-87f2-f580e48c03c5",
   recruiter_interview_activity: "3497328f-2da5-80ae-897d-c84d8ddb61f4",
@@ -124,11 +124,32 @@ export class NotionService {
   constructor() {
     const token = process.env.NOTION_TOKEN;
     this.available = !!token;
-    if (token) this.client = new Client({ auth: token });
+    if (token) {
+      console.error(`[NOTION] Initializing client with token: ${token.substring(0, 10)}...`);
+      this.client = new Client({ auth: token });
+    } else {
+      console.error(`[NOTION] No NOTION_TOKEN in process.env`);
+    }
   }
 
   isAvailable(): boolean {
     return this.available;
+  }
+
+  // Test the Notion integration by attempting a simple API call
+  async testConnection(): Promise<string> {
+    if (!this.available) return "ERROR: NOTION_TOKEN not available";
+    try {
+      // Try to fetch the first database we know exists
+      const response = await (this.client.databases as any).retrieve({
+        database_id: "3497328f-2da5-8049-87f2-f580e48c03c5",
+      });
+      console.error(`[NOTION] Test connection successful: ${response.title}`);
+      return `✓ Notion integration working. Database: ${response.title}`;
+    } catch (err: any) {
+      console.error(`[NOTION] Test connection failed:`, err);
+      return `✗ Notion integration failed: ${err?.message ?? "Unknown error"}`;
+    }
   }
 
   // Fetch a page's block content as plain text
@@ -160,10 +181,14 @@ export class NotionService {
       const params: any = { database_id: databaseId, page_size: 50 };
       if (filter) params.filter = filter;
 
+      console.error(`[NOTION] Querying database: ${databaseId}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response: any = await (this.client.databases as any).query(params);
 
-      if (!response.results || response.results.length === 0) return "(no results)";
+      if (!response.results || response.results.length === 0) {
+        console.error(`[NOTION] Database query returned no results for ${databaseId}`);
+        return "(no results)";
+      }
 
       const rows = (response.results as any[])
         .filter((r: any) => "properties" in r)
@@ -178,8 +203,10 @@ export class NotionService {
           return `- ${props}`;
         });
 
+      console.error(`[NOTION] Successfully queried database: ${databaseId}, got ${rows.length} rows`);
       return rows.join("\n");
     } catch (err: any) {
+      console.error(`[NOTION] Query failed for ${databaseId}:`, err);
       return `(unavailable: ${err?.message ?? "Notion query failed"})`;
     }
   }

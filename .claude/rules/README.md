@@ -48,7 +48,22 @@ Trigger downstream systems after a tool completes:
 
 ## Currently configured hooks
 
-None. Check `.claude/settings.json` for the current state.
+**Stop Hook (runs on session end):**
+- **Command:** `./.claude/scripts/session-write.sh`
+- **Purpose:** Auto-archive old sessions and write a session summary to `context/sessions/`
+
+**PostToolUse Hooks (fire after specific tools to prompt persistence):**
+
+| Tool | Action |
+|------|--------|
+| `intel` | Prompt: "Intel gathered. Call `remember type=company` to persist findings to `context/companies/`" |
+| `fit` | Prompt: "Fit score generated. Call `remember type=company` to append fit score + rationale to company file" |
+| `prep` | Prompt: "Prep complete. Call `remember type=company` to append prep notes to company file" |
+| `apply` | Prompt: "Apply analysis complete. Call `remember type=session` to save gap analysis + cover letter" |
+| `outreach` | Prompt: "Outreach drafted. Call `remember type=company` to append outreach drafts + warm intro paths to company file" |
+| `story_draft` | Prompt: "Story drafted. Call `remember type=story` to save STAR story to story library for future interview prep" |
+| `diagnose` | Prompt: "Diagnosis complete. Call `remember type=insight` to save pattern findings to recurring-gaps library" |
+| `scan` | Prompt: "Scan complete. Call `remember type=session` to save high-signal opportunities or patterns found" |
 
 ## How to add a hook
 

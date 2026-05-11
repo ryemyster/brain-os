@@ -12,6 +12,7 @@ import { runDiagnose } from "./tools/diagnose.js";
 import { runStoryDraft } from "./tools/story_draft.js";
 import { runLoop } from "./tools/loop.js";
 import { runRemember } from "./tools/remember.js";
+import { notion } from "./notion-client.js";
 
 // Direct-generation tools call Notion + Claude internally and return finished text.
 function generatedResponse(text: string) {
@@ -160,6 +161,13 @@ export function createServer(): McpServer {
       notion_sync: z.boolean().optional().describe("Flag for Notion sync (Phase 4 — marks the entry as pending sync). Default false."),
     },
     async ({ type, label, content, notion_sync }) => generatedResponse(runRemember(type, label, content, notion_sync ?? false))
+  );
+
+  server.tool(
+    "test-notion",
+    "Test Notion integration — verifies the API token works and can access databases.",
+    {},
+    async () => generatedResponse(await notion.testConnection())
   );
 
   return server;

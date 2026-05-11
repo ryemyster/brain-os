@@ -6,21 +6,22 @@ BrainOS is your personal command center inside Claude. It gives Claude a set of 
 
 ## What It Does
 
-BrainOS gives Claude 11 tools it can use on your behalf:
+BrainOS gives Claude 12 tools it can use on your behalf:
 
 | Tool | What it does |
 |------|-------------|
-| `daily` | Morning brief — your job pipeline, writing queue, and 3 focus items |
+| `daily` | Morning brief — your job pipeline, writing queue, and 3 focus items (pulls Google Calendar + Gmail) |
 | `prep` | Interview or meeting prep for a specific company |
 | `apply` | Gap analysis + cover letter draft when you paste a job description |
 | `scan` | Finds companies hiring PMs that match your profile |
-| `fit` | Scores how well you match a specific company |
+| `fit` | Scores how well you match a specific company (domain, industry, depth, stage, leadership) |
 | `intel` | Research brief on a company before you reach out |
 | `outreach` | Drafts a LinkedIn DM and email to a specific person or company |
 | `proctor` | Runs a mock interview and gives feedback after each answer |
 | `diagnose` | Reads your interview notes and finds patterns in what's going wrong |
 | `story_draft` | Interviews you to surface and polish your STAR stories |
 | `loop` | Shows the full interview loop for any MAANG company, or drills into one round |
+| `remember` | Saves intel, stories, insights, tasks, or session summaries to your context store |
 
 ---
 
@@ -48,7 +49,7 @@ Claude decides which tool to use. You just talk.
 Open a terminal, go into the `brain-os` folder, and run:
 
 ```bash
-cd /Users/rmcdonald/Repos/my-brain/brain-os
+cd /Users/rmcdonald/Repos/ryemyster/brain-os/brain-os-mcp
 npm install
 ```
 
@@ -70,9 +71,9 @@ If you ever need to check or fix this registration, open `~/.claude/settings.jso
 "brain-os": {
   "type": "stdio",
   "command": "node",
-  "args": ["/Users/rmcdonald/Repos/my-brain/brain-os/dist/index.js"],
+  "args": ["/Users/rmcdonald/Repos/ryemyster/brain-os/brain-os-mcp/dist/index.js"],
   "env": {
-    "BRAIN_ROOT": "/Users/rmcdonald/Repos/my-brain"
+    "BRAIN_ROOT": "/Users/rmcdonald/Repos/ryemyster/brain-os"
   }
 }
 ```
@@ -145,7 +146,7 @@ BrainOS is only as good as what's in your `career/` files. The two most importan
 Create a new file:
 
 ```bash
-touch /Users/rmcdonald/Repos/my-brain/career/pipeline/company-name.md
+touch /Users/rmcdonald/Repos/ryemyster/brain-os/career/pipeline/company-name.md
 ```
 
 Open it and write what you know: the role, who you talked to, where you are in the process, any notes on their culture or interview style.
@@ -203,12 +204,12 @@ brain-os/
 
 ---
 
-## Phase 4 Integrations (not yet built)
+## Integrations (Live)
 
-These are planned for a future phase:
+BrainOS integrates with external systems to provide and persist data:
 
-- **GitHub MCP** — repo activity and status across all projects
-- **Google Analytics MCP** — writing performance for the blog and portfolio
-- **Google Calendar** — pull interview dates and deadlines into `daily`
-- **Gmail** — surface job-related threads in `daily`
-- **Notion** — write application activity back to the job pipeline database
+- **Google Calendar** — `daily` tool pre-fetches your calendar for the next 7 days to surface interview dates and deadlines
+- **Gmail** — `daily` tool searches for job-related threads in the last 7 days to surface applications and follow-ups
+- **Notion** — Job pipeline database for tracking companies, interview progress, and research. `prep`, `fit`, and `apply` tools read from Notion; `remember` tool writes findings back
+- **GitHub MCP** (Phase 4) — Repo activity and status across all projects (not yet integrated into brain-os tools)
+- **Google Analytics MCP** (Phase 5) — Writing performance for the blog and portfolio (not yet integrated)
