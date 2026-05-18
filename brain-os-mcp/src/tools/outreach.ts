@@ -31,8 +31,6 @@ export async function runOutreach(
 ): Promise<string> {
   const slug = slugify(company);
 
-  appendOutreachLog(company, targetPerson ?? "", "drafting", `Outreach drafts generated${role ? ` for ${role}` : ""}.`);
-
   const [coreWhy, resume, recruiterVetting] = await Promise.all([
     notion.fetchPage(NOTION_PAGES.core_why),
     notion.fetchPage(NOTION_PAGES.resume),
@@ -45,7 +43,10 @@ export async function runOutreach(
   const pipelineContent = existsSync(join(CAREER_DIR, "pipeline", `${slug}.md`))
     ? readFileSync(join(CAREER_DIR, "pipeline", `${slug}.md`), "utf-8")
     : null;
-  const storedContext = readCompanyContext(company);
+  const [storedContext] = await Promise.all([
+    readCompanyContext(company),
+    appendOutreachLog(company, targetPerson ?? "", "drafting", `Outreach drafts generated${role ? ` for ${role}` : ""}.`),
+  ]);
 
   const staticContext = [
     `## Core Why — Positioning & Narrative (Notion)\n${coreWhy}`,

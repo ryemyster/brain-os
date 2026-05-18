@@ -1,12 +1,32 @@
-import { readFileSync, existsSync } from "fs";
+import { randomUUID } from "node:crypto";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import { CAREER_DIR, EXTERNAL_URLS } from "../config.js";
-import { fetchUrl } from "../fetch.js";
+import { CAREER_DIR } from "../config.js";
 import { getCompanyLoop } from "../data/maang.js";
 import { writeSession } from "../context.js";
+import { callModelConversation, compressHistory, ConversationTurn } from "../llm.js";
+import { upsertMemory, getMemory } from "../memory.js";
+
+const COMPRESS_THRESHOLD = 8;
 
 type InterviewType = "product" | "behavioral" | "metrics" | "strategy" | "vibe-coding" | "full";
 type Difficulty = "screen" | "panel" | "final";
+
+interface SessionState {
+  session_id: string;
+  config: { type: InterviewType; difficulty: Difficulty; company: string; role: string };
+  questions: Array<{ type: string; text: string; rubric: string[] }>;
+  asked_count: number; // questions asked so far (1 after opening)
+  turns: ConversationTurn[];
+  complete: boolean;
+}
+
+export interface ProctoringResponse {
+  session_id: string;
+  message: string;
+  progress: { asked: number; total: number };
+  complete: boolean;
+}
 
 const QUESTION_BANKS: Record<string, string[]> = {
   product: [
@@ -97,109 +117,176 @@ const RUBRICS: Record<string, string[]> = {
 
 function pickQuestions(type: string, count: number): string[] {
   const bank = QUESTION_BANKS[type] ?? [];
-  const shuffled = [...bank].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+  return [...bank].sort(() => Math.random() - 0.5).slice(0, count);
+}
+
+function buildSystemPrompt(config: SessionState["config"]): string {
+  return `You are a rigorous PM interview proctor for Ryan K. McDonald. You are conducting a ${config.type} interview at the ${config.difficulty} level${config.company !== "general" ? ` for ${config.company}` : ""}.
+
+Role: ${config.role}
+
+Rules:
+- One question at a time. Never reveal upcoming questions.
+- After each answer: score each rubric criterion 1–5, name one specific strength, name one specific improvement with a concrete revision example.
+- Do not soften feedback. Name what's missing.
+- After the final answer: deliver a session summary — overall score, top pattern (positive or negative), one thing to work on before next session.`;
+}
+
+async function saveSession(state: SessionState): Promise<void> {
+  await upsertMemory("proctor_session", state.session_id, JSON.stringify(state));
+}
+
+async function loadSession(sessionId: string): Promise<SessionState | null> {
+  const record = await getMemory("proctor_session", sessionId);
+  if (!record) return null;
+  return JSON.parse(record.content) as SessionState;
 }
 
 export async function runProctor(
   interviewType: InterviewType,
   company?: string,
   role?: string,
-  difficulty?: Difficulty
-): Promise<object> {
-  const resumePath = join(CAREER_DIR, "resume.md");
-  const achievementsPath = join(CAREER_DIR, "achievements.md");
+  difficulty?: Difficulty,
+  sessionId?: string,
+  answer?: string
+): Promise<ProctoringResponse> {
 
-  const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf-8") : "(empty)";
-  const achievements = existsSync(achievementsPath) ? readFileSync(achievementsPath, "utf-8") : "(empty)";
-  const portfolio = await fetchUrl(EXTERNAL_URLS.portfolio, "(portfolio unavailable)");
+  // --- Continuation: process an answer ---
+  if (sessionId && answer) {
+    const state = await loadSession(sessionId);
+    if (!state) throw new Error(`Session ${sessionId} not found.`);
 
-  const level = difficulty ?? "panel";
-  const questionCount = level === "screen" ? 3 : level === "panel" ? 5 : 7;
-
-  let questions: { type: string; questions: string[]; rubric: string[] }[] = [];
-
-  if (interviewType === "full") {
-    questions = [
-      { type: "behavioral", questions: pickQuestions("behavioral", 2), rubric: RUBRICS.behavioral },
-      { type: "product", questions: pickQuestions("product", 2), rubric: RUBRICS.product },
-      { type: "metrics", questions: pickQuestions("metrics", 1), rubric: RUBRICS.metrics },
-      { type: "strategy", questions: pickQuestions("strategy", 1), rubric: RUBRICS.strategy },
-      { type: "vibe-coding", questions: pickQuestions("vibe-coding", 1), rubric: RUBRICS["vibe-coding"] },
-    ];
-  } else {
-    questions = [{
-      type: interviewType,
-      questions: pickQuestions(interviewType, questionCount),
-      rubric: RUBRICS[interviewType] ?? [],
-    }];
-  }
-
-  writeSession(company ?? "general", interviewType, `Mock ${interviewType} session started. Difficulty: ${level}. Role: ${role ?? "Senior PM"}.`);
-
-  const maangLoop = company ? getCompanyLoop(company) : null;
-
-  let maangRoundContext: object | null = null;
-  if (maangLoop && interviewType !== "full") {
-    const stageMap: Record<string, string[]> = {
-      product: ["product sense", "product design", "product vision"],
-      behavioral: ["behavioral", "leadership", "bar raiser", "collaboration"],
-      metrics: ["execution", "analytical", "product analysis"],
-      strategy: ["strategy", "vision"],
-      "vibe-coding": ["vibe-coding", "technical fluency", "take-home"],
-    };
-    const targetStages = stageMap[interviewType] ?? [];
-    const matchedRounds = maangLoop.rounds.filter((r) =>
-      targetStages.some((s) => r.name.toLowerCase().includes(s) || r.tests.some((t) => t.toLowerCase().includes(s)))
-    );
-    if (matchedRounds.length > 0) {
-      maangRoundContext = {
-        company_name: maangLoop.company,
-        unique_emphasis: maangLoop.unique_emphasis,
-        framework: maangLoop.framework,
-        deal_breakers: maangLoop.deal_breakers,
-        ai_specific_notes: maangLoop.ai_specific_notes,
-        relevant_rounds: matchedRounds.map((r) => ({
-          name: r.name,
-          what_they_actually_want: r.what_they_actually_want,
-          rubric: r.rubric,
-          great_signals: r.great_signals,
-          weak_signals: r.weak_signals,
-          notes: r.notes,
-        })),
+    if (state.complete) {
+      return {
+        session_id: sessionId,
+        message: "This session is already complete. Start a new one to keep practicing.",
+        progress: { asked: state.asked_count, total: state.questions.length },
+        complete: true,
       };
     }
+
+    state.turns.push({ role: "user", content: answer });
+
+    if (state.turns.length > COMPRESS_THRESHOLD) {
+      state.turns = await compressHistory(state.turns, 6);
+    }
+
+    const isLastQuestion = state.asked_count >= state.questions.length;
+    const nextQuestion = !isLastQuestion ? state.questions[state.asked_count] : null;
+
+    const suffix = isLastQuestion
+      ? "\n\n[That was the last question. After giving feedback, deliver the final session summary.]"
+      : `\n\n[After giving feedback, ask the next question: "${nextQuestion!.text}"]`;
+
+    const turnsForCall: ConversationTurn[] = [
+      ...state.turns.slice(0, -1),
+      { role: "user", content: answer + suffix },
+    ];
+
+    const response = await callModelConversation(
+      "balanced",
+      buildSystemPrompt(state.config),
+      turnsForCall
+    );
+
+    state.turns.push({ role: "assistant", content: response });
+    state.asked_count++;
+
+    if (isLastQuestion) {
+      state.complete = true;
+      await writeSession(state.config.company, state.config.type, response);
+    }
+
+    await saveSession(state);
+
+    return {
+      session_id: sessionId,
+      message: response,
+      progress: { asked: state.asked_count, total: state.questions.length },
+      complete: state.complete,
+    };
   }
 
-  return {
-    task: `Run a mock ${interviewType} interview${company ? ` for ${company}` : ""}${role ? ` — ${role} role` : ""}. Conduct one question at a time. After each answer, give feedback before moving to the next.`,
-    session_config: {
+  // --- New session ---
+  const level = difficulty ?? "panel";
+  const questionCount = level === "screen" ? 3 : level === "panel" ? 5 : 7;
+  const resolvedCompany = company ?? "general";
+  const resolvedRole = role ?? "Senior PM";
+
+  let allQuestions: SessionState["questions"];
+
+  if (interviewType === "full") {
+    allQuestions = [
+      ...pickQuestions("behavioral", 2).map(q => ({ type: "behavioral", text: q, rubric: RUBRICS.behavioral })),
+      ...pickQuestions("product", 2).map(q => ({ type: "product", text: q, rubric: RUBRICS.product })),
+      ...pickQuestions("metrics", 1).map(q => ({ type: "metrics", text: q, rubric: RUBRICS.metrics })),
+      ...pickQuestions("strategy", 1).map(q => ({ type: "strategy", text: q, rubric: RUBRICS.strategy })),
+      ...pickQuestions("vibe-coding", 1).map(q => ({ type: "vibe-coding", text: q, rubric: RUBRICS["vibe-coding"] })),
+    ];
+  } else {
+    allQuestions = pickQuestions(interviewType, questionCount).map(q => ({
       type: interviewType,
-      difficulty: level,
-      company: company ?? "general",
-      role: role ?? "Senior PM",
-    },
-    how_to_run: [
-      "Start by setting the scene: tell Ryan which type of interview this is and that you'll give feedback after each answer.",
-      "Ask the first question. Wait for Ryan's full response before continuing.",
-      "After each answer: score it against the rubric (1-5 per criterion), give one specific strength, one specific improvement, and a revised version of the weak part.",
-      "Do not give the next question until feedback on the current one is acknowledged.",
-      "After all questions: give an overall session score, the top pattern you observed (positive or negative), and the one thing to work on before the next session.",
-      "At the end of the session, prompt Ryan: 'Run `remember type=session` to save this session summary before we close.'",
-      "For vibe-coding questions: let Ryan actually build or write — give them time, don't rush to feedback.",
-      ...(maangRoundContext
-        ? [
-            `This is a ${company} interview — use the company-specific rubric and deal-breakers from the maang_context field. Flag deal-breakers explicitly when Ryan's answer triggers one.`,
-          ]
-        : []),
+      text: q,
+      rubric: RUBRICS[interviewType] ?? [],
+    }));
+  }
+
+  const newSessionId = randomUUID();
+  const config: SessionState["config"] = {
+    type: interviewType,
+    difficulty: level,
+    company: resolvedCompany,
+    role: resolvedRole,
+  };
+
+  const resumePath = join(CAREER_DIR, "resume.md");
+  const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf-8") : "(empty)";
+
+  const maangLoop = company ? getCompanyLoop(company) : null;
+  const companyNotes = maangLoop
+    ? `\nCompany emphasis: ${maangLoop.unique_emphasis}. Deal-breakers: ${maangLoop.deal_breakers.join("; ")}.`
+    : "";
+
+  const rubricLines = [...new Set(allQuestions.flatMap(q => q.rubric))].map(r => `- ${r}`).join("\n");
+  const questionList = allQuestions.map((q, i) => `${i + 1}. [${q.type}] ${q.text}`).join("\n");
+
+  const setupMessage = `Session: ${interviewType} / ${level}${companyNotes}
+
+Rubric:
+${rubricLines}
+
+Candidate background (use when giving specific feedback):
+${resume.slice(0, 2000)}
+
+Questions (do NOT reveal the list — ask one at a time):
+${questionList}
+
+Begin the session. Brief intro, then ask question 1.`;
+
+  const openingMessage = await callModelConversation(
+    "balanced",
+    buildSystemPrompt(config),
+    [{ role: "user", content: setupMessage }]
+  );
+
+  const state: SessionState = {
+    session_id: newSessionId,
+    config,
+    questions: allQuestions,
+    asked_count: 1,
+    turns: [
+      { role: "user", content: setupMessage },
+      { role: "assistant", content: openingMessage },
     ],
-    questions,
-    ...(maangRoundContext ? { maang_context: maangRoundContext } : {}),
-    candidate_context: {
-      resume,
-      achievements,
-      portfolio,
-      note: "Use this context to make feedback specific — reference Ryan's actual experience when suggesting how to improve an answer.",
-    },
+    complete: false,
+  };
+
+  await saveSession(state);
+
+  return {
+    session_id: newSessionId,
+    message: openingMessage,
+    progress: { asked: 0, total: allQuestions.length },
+    complete: false,
   };
 }

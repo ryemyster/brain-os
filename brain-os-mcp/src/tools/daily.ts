@@ -4,7 +4,6 @@ import { execSync } from "child_process";
 import { CAREER_DIR, WRITING_DIR, PROJECTS_DIR } from "../config.js";
 import { readRecentSessions, readPatterns } from "../context.js";
 import { callModel } from "../llm.js";
-import { notion, NOTION_COLLECTIONS, NOTION_PAGES } from "../notion-client.js";
 
 const SYSTEM = `You are the decision-focus morning brief assistant for Ryan K. McDonald.
 
@@ -19,6 +18,7 @@ Output format:
 - **Today's Focus**: 3 bullet points — the only decisions/actions that matter today. Lead with interviews, close with projects.
 - **Job Pipeline Status**: 1-2 bullet points on where things stand (offers, final rounds, applications in flight).
 - **This Week's Deadlines**: if any (interview prep, follow-up response dates, writing deadlines).
+- **Repo Health**: 1 bullet per repo that has open issues or blockers worth flagging. Skip repos with 0 issues. If all clean, say so in one line.
 - **Stalled / At Risk**: flag anything overdue or waiting on you.
 - **One thing to drill**: if interview prep is due, name it. If a project is on fire, name it.
 
@@ -26,12 +26,14 @@ Rules:
 - No tables, no long lists. Extreme brevity.
 - Use Calendar as source of truth for interviews. Gmail for recruiter signals.
 - Notion interview_tracker is source of truth for pipeline state.
+- Repo Health comes from Active Projects section — surface open issue counts and any P0 blockers.
 - Prioritize what Ryan needs to DO or DECIDE today, not what's backgrounded.
 - If nothing is critical today, say so explicitly — don't manufacture urgency.`;
 
 interface DailyOptions {
   calendarEvents?: string;
   gmailThreads?: string;
+  notionData?: string;
 }
 
 function getFocusScorecard(): string {
@@ -101,47 +103,64 @@ function getProjectStatus(): string {
   }
   const statusTable = tableLines.join("\n");
 
-  // Fetch live issue counts for each project (13 total)
   const projects = [
-    { name: "checkin-ascendvent", repo: "ascendvent/checkin-ascendvent" },
-    { name: "brain-os", repo: "ryemyster/brain-os" },
-    { name: "portfolio", repo: "ryemyster/portfolio" },
-    { name: "frompixelstopunk", repo: "ryemyster/frompixelstopunk" },
-    { name: "techyeet-gaming", repo: "ryemyster/techyeet-gaming" },
-    { name: "vscode-themes-vibecoded", repo: "ryemyster/vscode-themes-vibecoded" },
-    { name: "ascendvent-home", repo: "ascendvent/ascendvent-home" },
-    { name: "founderos", repo: "ascendvent/founderos" },
-    { name: "SevenSharp", repo: "ascendvent/SevenSharp" },
-    { name: "ascendvent-planning", repo: "ascendvent/ascendvent-planning" },
-    { name: "ShaleYeah", repo: "ryemyster/ShaleYeah" },
-    { name: "small-language-models-for-pms", repo: "ryemyster/small-language-models-for-pms" },
-    { name: "autoresearch", repo: "ryemyster/autoresearch" },
+    { name: "checkin-ascendvent", repo: "ascendvent/checkin-ascendvent", localPath: null },
+    { name: "brain-os", repo: "ryemyster/brain-os", localPath: "/Users/rmcdonald/Repos/ryemyster/brain-os" },
+    { name: "portfolio", repo: "ryemyster/portfolio", localPath: "/Users/rmcdonald/Repos/ryemyster/portfolio" },
+    { name: "frompixelstopunk", repo: "ryemyster/frompixelstopunk", localPath: "/Users/rmcdonald/Repos/ryemyster/frompixelstopunk" },
+    { name: "techyeet-gaming", repo: "ryemyster/techyeet-gaming", localPath: "/Users/rmcdonald/Repos/ryemyster/techyeet-gaming" },
+    { name: "vscode-themes-vibecoded", repo: "ryemyster/vscode-themes-vibecoded", localPath: "/Users/rmcdonald/Repos/ryemyster/vscode-themes-vibecoded" },
+    { name: "ascendvent-home", repo: "ascendvent/ascendvent-home", localPath: "/Users/rmcdonald/Repos/ascendvent/ascendvent-home" },
+    { name: "founderos", repo: "ascendvent/founderos", localPath: "/Users/rmcdonald/Repos/ascendvent/founderos" },
+    { name: "SevenSharp", repo: "ascendvent/SevenSharp", localPath: "/Users/rmcdonald/Repos/ascendvent/SevenSharp" },
+    { name: "ascendvent-planning", repo: "ascendvent/ascendvent-planning", localPath: "/Users/rmcdonald/Repos/ascendvent/ascendvent-planning" },
+    { name: "ShaleYeah", repo: "ryemyster/ShaleYeah", localPath: "/Users/rmcdonald/Repos/ryemyster/ShaleYeah" },
+    { name: "small-language-models-for-pms", repo: "ryemyster/small-language-models-for-pms", localPath: "/Users/rmcdonald/Repos/ryemyster/small-language-models-for-pms" },
+    { name: "autoresearch", repo: "ryemyster/autoresearch", localPath: "/Users/rmcdonald/Repos/ryemyster/autoresearch" },
+    { name: "Claude-Cowork", repo: "ryemyster/Claude-Cowork", localPath: "/Users/rmcdonald/Repos/Claude-Cowork" },
   ];
 
   const liveStatus: string[] = [];
   for (const proj of projects) {
+    const parts: string[] = [`- **${proj.name}**`];
+
+    // GitHub open issue count
     try {
       const output = execSync(
         `.claude/scripts/gh-brain-os.sh issue list --repo ${proj.repo} --state open --json number --jq length`,
         { encoding: "utf-8", cwd: "/Users/rmcdonald/Repos/ryemyster/brain-os" }
       ).trim();
       const count = parseInt(output, 10) || 0;
-      liveStatus.push(`- **${proj.name}**: ${count} open issues`);
+      parts.push(`${count} open issues`);
     } catch (e) {
-      liveStatus.push(`- **${proj.name}**: (unable to fetch)`);
+      parts.push("(issues unavailable)");
     }
+
+    // Last 5 commits from local repo
+    if (proj.localPath && existsSync(proj.localPath)) {
+      try {
+        const log = execSync(
+          `git log --oneline -5`,
+          { encoding: "utf-8", cwd: proj.localPath }
+        ).trim();
+        if (log) {
+          parts.push(`\n  Recent commits:\n${log.split("\n").map(l => `    ${l}`).join("\n")}`);
+        }
+      } catch (e) {
+        // not a git repo or no commits
+      }
+    }
+
+    liveStatus.push(parts.join(" | "));
   }
 
   return `${statusTable}\n\n### Live Issue Counts\n${liveStatus.join("\n")}`;
 }
 
 export async function runDaily(options: DailyOptions = {}): Promise<string> {
-  const { calendarEvents, gmailThreads } = options;
-  const [tracker, recruiterActivity, unemploymentStatus, landARolePlan, projectStatus, focusScorecard] = await Promise.all([
-    notion.queryDatabase(NOTION_COLLECTIONS.interview_tracker),
-    notion.queryDatabase(NOTION_COLLECTIONS.recruiter_interview_activity),
-    notion.queryDatabase(NOTION_COLLECTIONS.weekly_unemployment_tracker),
-    notion.fetchPage(NOTION_PAGES.land_a_role_plan),
+  const { calendarEvents, gmailThreads, notionData } = options;
+
+  const [projectStatus, focusScorecard] = await Promise.all([
     Promise.resolve(getProjectStatus()),
     Promise.resolve(getFocusScorecard()),
   ]);
@@ -162,13 +181,13 @@ export async function runDaily(options: DailyOptions = {}): Promise<string> {
   const patterns = readPatterns();
 
   const user = [
-    `## Interview Tracker (Notion) — Source of Truth\n${tracker}`,
-    `## Recruiter Activity (Notion)\n${recruiterActivity}`,
+    notionData ? `## Notion Pipeline Data — Source of Truth\n${notionData}` : `## Notion Pipeline Data\n(not provided — pipeline state unknown)`,
     calendarEvents ? `## Calendar — This Week's Interviews\n${calendarEvents}` : "",
     gmailThreads ? `## Gmail — Recent Recruiter Messages\n${gmailThreads}` : "",
-    `## Current Decisions on the Table\n${landARolePlan}`,
+    pipeline.length > 0 ? `## Company Pipeline Files\n${pipeline.join("\n\n")}` : "",
     `## Focus Alignment\n${focusScorecard}`,
     `## Active Projects\n${projectStatus}`,
+    patterns ? `## Recurring Patterns\n${patterns}` : "",
   ]
     .filter(Boolean)
     .join("\n\n---\n\n");

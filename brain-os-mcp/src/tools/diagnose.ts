@@ -44,7 +44,7 @@ export async function runDiagnose(company?: string): Promise<string> {
     ? readFileSync(join(CAREER_DIR, "achievements.md"), "utf-8")
     : "(empty — use Notion Stories (STAR) as fallback)";
 
-  const previousPatterns = readPatterns();
+  const previousPatterns = await readPatterns();
 
   const staticContext = [
     `## MAANG Behavioral Story Map — Rubric with Gap Scores (Notion)\n${maangRubric}`,
@@ -62,9 +62,9 @@ export async function runDiagnose(company?: string): Promise<string> {
     previousPatterns ? `## Previously Identified Patterns\n${previousPatterns}` : "",
   ].filter(Boolean).join("\n\n---\n\n");
 
-  const analysis = await callModel("balanced", SYSTEM, user, staticContext);
+  const analysis = await callModel("powerful", SYSTEM, user, staticContext);
 
-  writePatterns(analysis);
+  await writePatterns(analysis);
 
   return analysis;
 }

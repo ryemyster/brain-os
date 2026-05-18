@@ -12,17 +12,28 @@ import { runDiagnose } from "./tools/diagnose.js";
 import { runStoryDraft } from "./tools/story_draft.js";
 import { runLoop } from "./tools/loop.js";
 import { runRemember } from "./tools/remember.js";
+import { runGetVersion, runServerStatus } from "./tools/status.js";
 import { notion } from "./notion-client.js";
 
-// Direct-generation tools call Notion + Claude internally and return finished text.
 function generatedResponse(text: string) {
   return { content: [{ type: "text" as const, text }] };
 }
 
-// Context-loader tools return structured JSON task objects for Claude to act on
-// (scan, intel, proctor, loop, story_draft — need web search or multi-turn interaction).
 function toolResponse(result: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+}
+
+async function logged<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  console.error(`[tool] ${name} called`);
+  const start = Date.now();
+  try {
+    const result = await fn();
+    console.error(`[tool] ${name} ok (${Date.now() - start}ms)`);
+    return result;
+  } catch (err) {
+    console.error(`[tool] ${name} error (${Date.now() - start}ms):`, err);
+    throw err;
+  }
 }
 
 export function createServer(): McpServer {
@@ -33,12 +44,13 @@ export function createServer(): McpServer {
 
   server.tool(
     "daily",
-    "Morning brief — loads job pipeline, writing queue, and project context into a structured daily summary. Run this at the start of each day. Before calling, fetch calendar events for the next 7 days via mcp__claude_ai_Google_Calendar__list_events and job-related Gmail threads via mcp__claude_ai_Gmail__search_threads, then pass them as calendarEvents and gmailThreads.",
+    "Morning brief — loads job pipeline, writing queue, and project context into a structured daily summary. Run this at the start of each day. Before calling, pre-fetch in parallel: (1) calendar events for the next 7 days via mcp__claude_ai_Google_Calendar__list_events, (2) job-related Gmail threads via mcp__claude_ai_Gmail__search_threads (last 7 days), (3) Notion pipeline data via mcp__claude_ai_Notion__notion-search or notion-fetch for the interview_tracker database (ID: 3497328f-2da5-8049-87f2-f580e48c03c5), recruiter_interview_activity database (ID: 3497328f-2da5-80ae-897d-c84d8ddb61f4), and land_a_role_plan page (ID: 3327328f2da580fda5e7e3328d062b36). Pass results as calendarEvents, gmailThreads, and notionData.",
     {
       calendarEvents: z.string().optional().describe("Serialized calendar events for the next 7 days from Google Calendar MCP (JSON string or formatted list)."),
       gmailThreads: z.string().optional().describe("Serialized job-related email threads from Gmail MCP (JSON string or formatted list)."),
+      notionData: z.string().optional().describe("Serialized Notion pipeline data pre-fetched via Notion MCP — include interview_tracker rows, recruiter_interview_activity rows, and land_a_role_plan page content."),
     },
-    async ({ calendarEvents, gmailThreads }) => generatedResponse(await runDaily({ calendarEvents, gmailThreads }))
+    async ({ calendarEvents, gmailThreads, notionData }) => logged("daily", async () => generatedResponse(await runDaily({ calendarEvents, gmailThreads, notionData })))
   );
 
   server.tool(
@@ -47,7 +59,7 @@ export function createServer(): McpServer {
     {
       company: z.string().describe("Company name to prep for (e.g. 'Stripe'). Matches against career/pipeline/{company-name}.md — use the same slug if the file exists."),
     },
-    async ({ company }) => generatedResponse(await runPrep(company))
+    async ({ company }) => logged("prep", async () => generatedResponse(await runPrep(company)))
   );
 
   server.tool(
@@ -56,7 +68,7 @@ export function createServer(): McpServer {
     {
       jd: z.string().describe("Full job description text to analyze against career/resume.md."),
     },
-    async ({ jd }) => generatedResponse(await runApply(jd))
+    async ({ jd }) => logged("apply", async () => generatedResponse(await runApply(jd)))
   );
 
   server.tool(
@@ -67,7 +79,7 @@ export function createServer(): McpServer {
       stage: z.string().optional().describe("Override company stage filter (default: Series B+)."),
       location: z.string().optional().describe("Override location (default: New York City)."),
     },
-    async ({ focus, stage, location }) => toolResponse(runScan({ focus, stage, location }))  // context loader — needs web search
+    async ({ focus, stage, location }) => logged("scan", async () => toolResponse(runScan({ focus, stage, location })))
   );
 
   server.tool(
@@ -76,7 +88,7 @@ export function createServer(): McpServer {
     {
       company: z.string().describe("Company name to analyze fit against (e.g. 'Anthropic', 'Plaid')."),
     },
-    async ({ company }) => generatedResponse(await runFit(company))
+    async ({ company }) => logged("fit", async () => generatedResponse(await runFit(company)))
   );
 
   server.tool(
@@ -85,7 +97,7 @@ export function createServer(): McpServer {
     {
       company: z.string().describe("Company name to research (e.g. 'Ramp', 'Cohere')."),
     },
-    async ({ company }) => toolResponse(await runIntel(company))  // context loader — needs web search
+    async ({ company }) => logged("intel", async () => toolResponse(await runIntel(company)))
   );
 
   server.tool(
@@ -96,12 +108,12 @@ export function createServer(): McpServer {
       target_person: z.string().optional().describe("Specific person to contact (name + title if known). If omitted, the tool will identify the best contact."),
       role: z.string().optional().describe("Specific role you're targeting (e.g. 'Senior PM, Growth'). Sharpens the message angle."),
     },
-    async ({ company, target_person, role }) => generatedResponse(await runOutreach(company, target_person, role))
+    async ({ company, target_person, role }) => logged("outreach", async () => generatedResponse(await runOutreach(company, target_person, role)))
   );
 
   server.tool(
     "proctor",
-    "Mock interview proctor — runs structured practice sessions for product sense, behavioral, metrics, strategy, vibe-coding, or a full mixed interview. Gives per-answer feedback against a rubric. Set difficulty to 'screen', 'panel', or 'final'.",
+    "Mock interview proctor — runs structured practice sessions for product sense, behavioral, metrics, strategy, vibe-coding, or a full mixed interview. Gives per-answer feedback against a rubric. First call starts a session and returns the opening question + a session_id. Subsequent calls pass session_id + your answer to get feedback and the next question.",
     {
       interview_type: z
         .enum(["product", "behavioral", "metrics", "strategy", "vibe-coding", "full"])
@@ -112,9 +124,11 @@ export function createServer(): McpServer {
         .enum(["screen", "panel", "final"])
         .optional()
         .describe("Interview stage — controls number of questions (screen: 3, panel: 5, final: 7)."),
+      session_id: z.string().optional().describe("Session ID returned by the first proctor call. Pass this on every subsequent call to continue the session."),
+      answer: z.string().optional().describe("Your answer to the current question. Required when continuing a session (session_id provided)."),
     },
-    async ({ interview_type, company, role, difficulty }) =>
-      toolResponse(runProctor(interview_type, company, role, difficulty))
+    async ({ interview_type, company, role, difficulty, session_id, answer }) =>
+      logged("proctor", async () => toolResponse(await runProctor(interview_type, company, role, difficulty, session_id, answer)))
   );
 
   server.tool(
@@ -123,7 +137,7 @@ export function createServer(): McpServer {
     {
       company: z.string().optional().describe("Filter to a specific company's notes. Omit to analyze all interviews."),
     },
-    async ({ company }) => generatedResponse(await runDiagnose(company))
+    async ({ company }) => logged("diagnose", async () => generatedResponse(await runDiagnose(company)))
   );
 
   server.tool(
@@ -133,7 +147,7 @@ export function createServer(): McpServer {
       company: z.string().describe("Company name (Meta, Amazon, Netflix, Google, Apple). Aliases work too (e.g., 'FB', 'AWS')."),
       round: z.string().optional().describe("Specific round name or type to drill into (e.g., 'Bar Raiser', 'Product Sense', 'Behavioral'). Omit to get the full loop overview."),
     },
-    async ({ company, round }) => toolResponse(await runLoop(company, round))
+    async ({ company, round }) => logged("loop", async () => toolResponse(await runLoop(company, round)))
   );
 
   server.tool(
@@ -148,7 +162,7 @@ export function createServer(): McpServer {
         .optional()
         .describe("An existing rough story draft to refine rather than mine from scratch."),
     },
-    async ({ theme, existing_story }) => toolResponse(runStoryDraft(theme, existing_story))
+    async ({ theme, existing_story }) => logged("story_draft", async () => toolResponse(await runStoryDraft(theme, existing_story)))
   );
 
   server.tool(
@@ -160,14 +174,28 @@ export function createServer(): McpServer {
       content: z.string().describe("The content to save. Write complete markdown — this is stored as-is."),
       notion_sync: z.boolean().optional().describe("Flag for Notion sync (Phase 4 — marks the entry as pending sync). Default false."),
     },
-    async ({ type, label, content, notion_sync }) => generatedResponse(runRemember(type, label, content, notion_sync ?? false))
+    async ({ type, label, content, notion_sync }) => logged("remember", async () => generatedResponse(await runRemember(type, label, content, notion_sync ?? false)))
   );
 
   server.tool(
     "test-notion",
     "Test Notion integration — verifies the API token works and can access databases.",
     {},
-    async () => generatedResponse(await notion.testConnection())
+    async () => logged("test-notion", async () => generatedResponse(await notion.testConnection()))
+  );
+
+  server.tool(
+    "get_version",
+    "Returns server version, Node.js version, active transport, configured models, and process uptime.",
+    {},
+    async () => logged("get_version", async () => toolResponse(runGetVersion()))
+  );
+
+  server.tool(
+    "server_status",
+    "Health check — pings Supabase, Ollama, and the Anthropic API and returns latency + ok/error for each. Use this to verify all dependencies are reachable after deploys or when tools are behaving unexpectedly.",
+    {},
+    async () => logged("server_status", async () => toolResponse(await runServerStatus()))
   );
 
   return server;

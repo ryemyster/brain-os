@@ -1,0 +1,31 @@
+services:
+  brain-os:
+    build: .
+    container_name: brain-os-mcp
+    ports:
+      - "5556:5556"
+    env_file: .env
+    environment:
+      MCP_TRANSPORT: http
+      MCP_PORT: "5556"
+      NODE_ENV: production
+      OLLAMA_BASE_URL: http://ollama:11434
+      SUPABASE_URL: http://supabase_kong_checkin-ascendvent:8000
+    networks:
+      - founderos_net
+      - supabase_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5556/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  founderos_net:
+    external: true
+    name: founderos_default
+  supabase_net:
+    external: true
+    name: supabase_network_checkin-ascendvent

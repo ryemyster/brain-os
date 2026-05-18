@@ -17,7 +17,7 @@ BrainOS gives Claude 12 tools it can use on your behalf:
 | `fit` | Scores how well you match a specific company (domain, industry, depth, stage, leadership) |
 | `intel` | Research brief on a company before you reach out |
 | `outreach` | Drafts a LinkedIn DM and email to a specific person or company |
-| `proctor` | Runs a mock interview and gives feedback after each answer |
+| `proctor` | Runs a stateful mock interview — returns a `session_id` on the first call, then accepts `session_id + answer` to advance through questions with per-answer feedback |
 | `diagnose` | Reads your interview notes and finds patterns in what's going wrong |
 | `story_draft` | Interviews you to surface and polish your STAR stories |
 | `loop` | Shows the full interview loop for any MAANG company, or drills into one round |
@@ -121,6 +121,22 @@ You ask Claude something
 
 ---
 
+## Architecture: Multi-turn sessions
+
+Most tools are single-shot — one call, one response. The exception is `proctor`, which manages a full interview loop across multiple calls using rolling summarization to keep the conversation history bounded.
+
+**How it works:**
+
+1. First call → `proctor` starts a session, asks Q1, saves state to Supabase, returns a `session_id`
+2. Each answer → `proctor` loads state, appends the answer, optionally compresses old history via Haiku, sends compressed history to Sonnet, returns feedback + next question
+3. Final answer → Sonnet delivers a session summary, session is marked complete and written to the session log
+
+**Rolling summarization** fires when conversation history exceeds 8 turns. Haiku compresses the oldest turns into structured JSON (`key_facts`, `decisions`, `outputs`, `open_items`) — cheaper and more model-friendly than prose. The last 6 turns are kept verbatim. Total history sent to Sonnet stays bounded regardless of session length.
+
+See [`docs/proctor-session-flow.md`](docs/proctor-session-flow.md) for full sequence diagrams of all four flows: new session, answer pass (no compression), answer pass (with compression), and final answer.
+
+---
+
 ## How to Maintain It
 
 ### Rebuilding after changes
@@ -180,8 +196,14 @@ New work goes on `develop`. When it's tested and working, merge to `main`.
 brain-os/
 ├── src/
 │   ├── index.ts          ← entry point (starts the server)
-│   ├── server.ts         ← registers all 11 tools
+│   ├── server.ts         ← registers all tools with MCP
 │   ├── config.ts         ← paths and environment variables
+│   ├── llm.ts            ← Anthropic client: callModel, callModelConversation, compressHistory
+│   ├── memory.ts         ← Supabase read/write + Ollama embeddings
+│   ├── context.ts        ← typed helpers: company, story, session, patterns
+│   ├── notion-client.ts  ← Notion API wrapper
+│   ├── fetch.ts          ← URL fetch helper
+│   ├── types.ts          ← shared types
 │   ├── data/
 │   │   └── maang.ts      ← MAANG interview loop data
 │   └── tools/
@@ -192,10 +214,14 @@ brain-os/
 │       ├── fit.ts
 │       ├── intel.ts
 │       ├── outreach.ts
-│       ├── proctor.ts
+│       ├── proctor.ts    ← stateful multi-turn interview loop
 │       ├── diagnose.ts
 │       ├── story_draft.ts
-│       └── loop.ts
+│       ├── loop.ts
+│       ├── remember.ts
+│       └── status.ts
+├── docs/
+│   └── proctor-session-flow.md  ← sequence diagrams for the proctor loop
 ├── dist/                 ← built output (don't edit, auto-generated)
 ├── package.json
 ├── tsconfig.json

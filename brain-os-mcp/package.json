@@ -13,6 +13,7 @@
     "@anthropic-ai/sdk": "^0.94.0",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "@notionhq/client": "^5.20.0",
+    "@supabase/supabase-js": "^2.106.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

@@ -64,12 +64,14 @@ const MINING_QUESTIONS: Record<string, string[]> = {
 export async function runStoryDraft(theme: StoryTheme, existingStory?: string): Promise<object> {
   const themes = theme === "all" ? Object.keys(MINING_QUESTIONS) : [theme];
   const storedStories: Record<string, string> = {};
-  for (const t of themes) {
-    const stored = readStory(t);
-    if (stored) storedStories[t] = stored;
-  }
+  await Promise.all(
+    themes.map(async (t) => {
+      const stored = await readStory(t);
+      if (stored) storedStories[t] = stored;
+    })
+  );
   if (!existingStory && themes.length === 1) {
-    writeStory(themes[0], `Mining session initiated. Story pending.`);
+    await writeStory(themes[0], `Mining session initiated. Story pending.`);
   }
 
   const resumePath = join(CAREER_DIR, "resume.md");

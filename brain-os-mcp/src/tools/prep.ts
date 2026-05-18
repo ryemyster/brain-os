@@ -45,7 +45,7 @@ export async function runPrep(company: string): Promise<string> {
   const localPipeline = existsSync(pipelinePath)
     ? readFileSync(pipelinePath, "utf-8")
     : "(no local pipeline file)";
-  const storedContext = readCompanyContext(company);
+  const storedContext = await readCompanyContext(company);
 
   const staticContext = [
     `## Ryan's Resume (Notion)\n${resume}`,
