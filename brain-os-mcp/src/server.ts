@@ -12,7 +12,7 @@ import { runDiagnose } from "./tools/diagnose.js";
 import { runStoryDraft } from "./tools/story_draft.js";
 import { runLoop } from "./tools/loop.js";
 import { runRemember } from "./tools/remember.js";
-import { runGetVersion, runServerStatus } from "./tools/status.js";
+import { runGetVersion, runServerStatus, runCheckBrainRoot } from "./tools/status.js";
 import { notion } from "./notion-client.js";
 
 function generatedResponse(text: string) {
@@ -182,6 +182,13 @@ export function createServer(): McpServer {
     "Test Notion integration — verifies the API token works and can access databases.",
     {},
     async () => logged("test-notion", async () => generatedResponse(await notion.testConnection()))
+  );
+
+  server.tool(
+    "check_brain_root",
+    "Verifies BRAIN_ROOT is set and the path exists, then outputs a full directory taxonomy of that path. Use this to diagnose missing career files or misconfigured deployments.",
+    {},
+    async () => logged("check_brain_root", async () => toolResponse(runCheckBrainRoot()))
   );
 
   server.tool(

@@ -1,6 +1,6 @@
 import { supabase } from "../memory.js";
-import { readFileSync } from "fs";
-import { join, dirname } from "path";
+import { readFileSync, statSync, readdirSync, existsSync } from "fs";
+import { join, dirname, relative } from "path";
 import { fileURLToPath } from "url";
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
@@ -70,6 +70,90 @@ async function checkAnthropic(): Promise<{ ok: boolean; latency_ms: number; erro
   } catch (err) {
     return { ok: false, latency_ms: Date.now() - start, error: String(err) };
   }
+}
+
+const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "sessions", ".claude"]);
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function walkTree(dir: string, prefix = "", lines: string[] = [], depth = 0): string[] {
+  if (depth > 6) return lines;
+
+  let entries: string[];
+  try {
+    entries = readdirSync(dir).sort();
+  } catch {
+    return lines;
+  }
+
+  // dirs first, then files
+  const sorted = [
+    ...entries.filter(e => { try { return statSync(join(dir, e)).isDirectory(); } catch { return false; } }),
+    ...entries.filter(e => { try { return statSync(join(dir, e)).isFile(); } catch { return false; } }),
+  ];
+
+  sorted.forEach((entry, i) => {
+    if (entry.startsWith(".") && entry !== ".env.example") return;
+    const isLast = i === sorted.length - 1;
+    const connector = isLast ? "└── " : "├── ";
+    const childPrefix = isLast ? "    " : "│   ";
+    const fullPath = join(dir, entry);
+
+    try {
+      const stat = statSync(fullPath);
+      if (stat.isDirectory()) {
+        if (SKIP_DIRS.has(entry)) {
+          lines.push(`${prefix}${connector}${entry}/ [skipped]`);
+        } else {
+          lines.push(`${prefix}${connector}${entry}/`);
+          walkTree(fullPath, prefix + childPrefix, lines, depth + 1);
+        }
+      } else {
+        const size = formatBytes(stat.size);
+        const mtime = stat.mtime.toISOString().split("T")[0];
+        lines.push(`${prefix}${connector}${entry} (${size}, ${mtime})`);
+      }
+    } catch {
+      lines.push(`${prefix}${connector}${entry} [unreadable]`);
+    }
+  });
+
+  return lines;
+}
+
+export function runCheckBrainRoot(): object {
+  const brainRoot = process.env.BRAIN_ROOT;
+
+  if (!brainRoot) {
+    return {
+      ok: false,
+      error: "BRAIN_ROOT is not set. Add it to the MCP server env config in ~/.claude/settings.json.",
+      brain_root: null,
+      taxonomy: null,
+    };
+  }
+
+  if (!existsSync(brainRoot)) {
+    return {
+      ok: false,
+      error: `BRAIN_ROOT is set to "${brainRoot}" but that path does not exist.`,
+      brain_root: brainRoot,
+      taxonomy: null,
+    };
+  }
+
+  const lines = [`${brainRoot}/`];
+  walkTree(brainRoot, "", lines);
+
+  return {
+    ok: true,
+    brain_root: brainRoot,
+    taxonomy: lines.join("\n"),
+  };
 }
 
 export async function runServerStatus() {
