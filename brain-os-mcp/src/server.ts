@@ -12,7 +12,7 @@ import { runDiagnose } from "./tools/diagnose.js";
 import { runStoryDraft } from "./tools/story_draft.js";
 import { runLoop } from "./tools/loop.js";
 import { runRemember } from "./tools/remember.js";
-import { runGetVersion, runServerStatus, runCheckBrainRoot } from "./tools/status.js";
+import { runGetVersion, runServerStatus, runBrainstem } from "./tools/status.js";
 import { notion } from "./notion-client.js";
 
 function generatedResponse(text: string) {
@@ -185,10 +185,10 @@ export function createServer(): McpServer {
   );
 
   server.tool(
-    "check_brain_root",
+    "brainstem",
     "Verifies BRAIN_ROOT is set and the path exists, then outputs a full directory taxonomy of that path. Use this to diagnose missing career files or misconfigured deployments.",
     {},
-    async () => logged("check_brain_root", async () => toolResponse(runCheckBrainRoot()))
+    async () => logged("brainstem", async () => toolResponse(runBrainstem()))
   );
 
   server.tool(

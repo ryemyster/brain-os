@@ -125,7 +125,7 @@ function walkTree(dir: string, prefix = "", lines: string[] = [], depth = 0): st
   return lines;
 }
 
-export function runCheckBrainRoot(): object {
+export function runBrainstem(): object {
   const brainRoot = process.env.BRAIN_ROOT;
 
   if (!brainRoot) {
