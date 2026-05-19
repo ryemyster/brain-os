@@ -165,7 +165,7 @@ Writes back to Notion
 
 **Next steps:**
 - Wire into `daily` tool (show project status)
-- Add repo health dashboard to `projects/index.md`
+- Add repo health dashboard to `context-store/projects/index.md`
 - Link to GitHub issue creation workflow
 
 ---
@@ -178,7 +178,7 @@ Writes back to Notion
 
 **How it will be used (planned):**
 - Show which writing topics resonate (views + engagement)
-- Inform `writing/ideas.md` prioritization
+- Inform `context-store/writing/ideas.md` prioritization
 - Surface best-performing content for portfolio
 - Track blog growth over time
 
@@ -229,13 +229,13 @@ Hook echoes: "Call remember type=X label=Y"
     ↓
 User calls: remember type=company label=Acme
     ↓
-remember reads input, queries career/ files
+orchestration reads selected context-store files, then passes concise context to MCP tools
     ↓
 remember creates/updates page in Notion
     ↓
 Page saved to: Job Pipeline / Company Detail
     ↓
-Context file also saved: context/companies/acme.md
+Context file also saved: context-store/context/companies/acme.md
 ```
 
 **Symmetry:** Every brain-os tool can read from Notion and write findings back. This creates a positive feedback loop where each session builds on previous research.
@@ -304,4 +304,3 @@ Context file also saved: context/companies/acme.md
 1. After running `intel`, manually call `remember type=company` to overwrite stale notes
 2. Phase 5 will add automatic write-back on tool completion
 3. Until then, manual `remember` calls are required to stay in sync
-

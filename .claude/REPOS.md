@@ -126,34 +126,35 @@ Complete map of all active repositories across both GitHub accounts (ryemyster a
 
 ## RyEmyster Ecosystem
 
-### brain-os (This Repo — Job Hunt Automation)
+### brain-os (This Repo — Claude Code Orchestration Workspace)
 
-**Org:** ryemyster | **Status:** Active | **Stack:** TypeScript + Node (MCP server) + Notion + Google APIs
+**Org:** ryemyster | **Status:** Active | **Stack:** Markdown context + Claude Code workflow configuration + MCP integrations
 
 **What it contains:**
-- 12 MCP tools for job hunting (scan, intel, fit, prep, apply, outreach, proctor, diagnose, loop, story_draft, daily, remember)
+- Claude Code orchestration for job search, writing, project context, and durable personal memory
 - Career knowledge base (resume, achievements, voice guide, job criteria)
-- Interview notes and context store
-- Skill definitions (job-search, prep-loop, build-brainos, sync-context, doc-coauthoring)
-- Hook configuration (8 active)
+- Interview notes and human-readable context store
+- Skill definitions (job-search, prep-loop, sync-context, doc-coauthoring)
+- Rules, hooks, and agent definitions for Claude Code behavior
 - This documentation
+
+**Related repo:** `brain-os-mcp` now lives separately at `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp` and contains the TypeScript MCP server.
 
 **GitHub account:** ryemyster (default)
 
-**When to use it:** Job search work, interview prep, adding brain-os tools, documentation updates
+**When to use it:** Job search work, interview prep, writing updates, context updates, orchestration docs, Claude Code workflow behavior
 
 **Open issues/needs:**
 - Comprehensive docs (in progress — this audit)
 - Repo inventory (Task 6 — being created now)
-- GitHub integration (Phase 4)
+- Keep MCP server references pointed at sibling repo
 
 **Key files:**
 - `CLAUDE.md` — Job hunt context and system overview
-- `brain-os-mcp/` — MCP server source (TypeScript)
-- `career/` — Resume, achievements, voice guide, pipeline
-- `context/` — Persistent memory store
+- `context-store/career/` — Resume, achievements, voice guide, pipeline
+- `context-store/context/` — Human-readable context and session notes
 - `.claude/` — Skills, rules, configuration
-- `projects/index.md` — Active project tracker
+- `context-store/projects/index.md` — Active project tracker
 
 ---
 
@@ -163,8 +164,8 @@ Complete map of all active repositories across both GitHub accounts (ryemyster a
 
 **What it contains:**
 - Blog posts arguing PM is a creative discipline
-- Drafts in `writing/drafts/`
-- Published archive in `writing/published/`
+- Drafts in `context-store/writing/drafts/`
+- Published archive in `context-store/writing/published/`
 - Site theme and styling
 
 **GitHub account:** ryemyster (default)
@@ -397,7 +398,7 @@ npm run build
 1. Create on GitHub under appropriate org (ryemyster or ascendvent)
 2. Clone locally: `git clone git@github-{account}:{org}/{repo}.git`
 3. Add to this list (`REPOS.md`)
-4. Update `projects/index.md` with status and key open issues
+4. Update `context-store/projects/index.md` with status and key open issues
 5. Create CLAUDE.md in repo if it has special instructions
 6. If it's an MCP server, register in `~/.claude/settings.json`
 
@@ -407,10 +408,10 @@ npm run build
 
 | Location | Contents | Ownership |
 |----------|----------|-----------|
-| `career/` | Resume, achievements, voice, pipeline | brain-os (this repo) |
-| `context/` | Persistent memory, company research, stories | brain-os (this repo) |
-| `writing/` | Blog drafts and published posts | frompixelstopunk + brain-os |
-| `projects/` | Active project tracker | brain-os (this repo) |
+| `context-store/career/` | Resume, achievements, voice, pipeline | brain-os (this repo) |
+| `context-store/context/` | Persistent memory, company research, stories | brain-os (this repo) |
+| `context-store/writing/` | Blog drafts and published posts | frompixelstopunk + brain-os |
+| `context-store/projects/` | Active project tracker | brain-os (this repo) |
 | `ascendvent-planning/` | Product strategy and research | ascendvent org |
 | `.claude/` | Skills, rules, config, hooks | brain-os (this repo) |
 
@@ -426,4 +427,3 @@ npm run build
 | portfolio | /Users/rmcdonald/Repos/ryemyster/portfolio | Portfolio site |
 | frompixelstopunk | /Users/rmcdonald/Repos/ryemyster/frompixelstopunk | Blog |
 | founderos | /Users/rmcdonald/Repos/ascendvent/founderos | MCP server (published) |
-

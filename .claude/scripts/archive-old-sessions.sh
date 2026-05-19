@@ -1,7 +1,7 @@
 #!/bin/bash
 # Archive sessions older than 30 days to reduce context load
 
-SESSIONS_DIR="/Users/rmcdonald/Repos/ryemyster/brain-os/context/sessions"
+SESSIONS_DIR="/Users/rmcdonald/Repos/ryemyster/brain-os/context-store/sessions"
 ARCHIVE_DIR="$SESSIONS_DIR/archive"
 DAYS_THRESHOLD=30
 

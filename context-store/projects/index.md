@@ -38,7 +38,7 @@ Published MCP server for structured product discovery. 11-stage pipeline from pr
 
 ## From Pixels to Punk
 **Repo:** `frompixelstopunk/`
-Blog arguing that product management is a creative discipline, not a business function. Active publishing outlet. Drafts live in `writing/drafts/` in this repo; published archive in `writing/published/`.
+Blog arguing that product management is a creative discipline, not a business function. Active publishing outlet. Drafts live in `context-store/writing/drafts/` in this repo; published archive in `context-store/writing/published/`.
 
 ## ShaleYeah
 **Repo:** `ShaleYeah/`
