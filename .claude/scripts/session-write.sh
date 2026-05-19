@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Writes a session state file to context/sessions/ at the end of every Claude session.
+# Writes a session state file to context-store/sessions/ at the end of every Claude session.
 # Fired by the Stop hook. Reads the session transcript summary from stdin (passed by Claude Code).
 # Falls back to a minimal timestamp-only note if no transcript data is available.
 
 BRAIN_OS_DIR="/Users/rmcdonald/Repos/ryemyster/brain-os"
-SESSIONS_DIR="$BRAIN_OS_DIR/context/sessions"
+SESSIONS_DIR="$BRAIN_OS_DIR/context-store/sessions"
 ARCHIVE_DIR="$SESSIONS_DIR/archive"
 DATE=$(date +%Y-%m-%d)
 TIME=$(date +%H-%M)
@@ -56,7 +56,7 @@ type: auto-session
 $(if [[ -n "$TRANSCRIPT" ]]; then
   echo "$TRANSCRIPT"
 else
-  echo "(No transcript captured — session ended without summary. Check context/sessions/ for manually saved notes from this session.)"
+  echo "(No transcript captured — session ended without summary. Check context-store/sessions/ for manually saved notes from this session.)"
 fi)
 EOF
 

@@ -1,16 +1,24 @@
 node_modules/
 dist/
+brain-os-mcp/
 .env
+.env.*
+*.env
 *.DS_Store
 *.png
 *.jpg
 *.jpeg
+.claude/settings.json
+.claude/settings.jsonc
 .claude/settings.local.json
+.claude/settings.local.jsonc
 .vscode/
 
 # Auto-generated session files — local context only, not committed to git
-context/sessions/*-auto-*.md
-context/sessions/archive/
+context-store/sessions/*-auto-*.md
+context-store/sessions/archive/
 
 # Test files
 test_notion_write.js
+
+scratch/

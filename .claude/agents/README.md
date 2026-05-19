@@ -1,32 +1,37 @@
-# Agents (Multi-Agent Teams)
+# Agents
 
-This directory is reserved for sub-agent definitions — specialized Claude agents that can be spawned for complex, multi-step tasks that benefit from parallelism or role separation.
+This directory contains focused Claude agent definitions for the BrainOS orchestration/context repo. MCP server development agents live in the sibling repo `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp`.
 
-## What a sub-agent is
+## Current Agents
 
-A sub-agent is a Claude instance with a focused role, specific tools, and a narrow scope. The orchestration layer (Claude Code) spawns one or more agents, collects their outputs, and synthesizes a result. Each agent gets a role prompt that constrains what it does.
+| Agent | File | Purpose | Default Scope |
+|-------|------|---------|---------------|
+| `content-update` | `content-update.md` | Markdown and content-only updates | Target content files, style guide when needed |
 
-## The concept architecture
+## When To Use
 
-The original concept diagram shows a 4-role team for complex research questions:
+- Use `content-update` for markdown/content-only changes.
+- Use the sibling `brain-os-mcp` repo for MCP package code questions, tool schemas, memory, integrations, runtime behavior, PR review, and release checks.
+- Do not use agents when the answer is already clear from `.claude/project-map.md`.
 
-| Agent | Model | Role |
-|-------|-------|------|
-| Context Scout | Haiku | Fast — loads relevant files, prior sessions, and company context |
-| Investigators | Sonnet | Deep — researches the question from multiple angles |
-| Challenger | Sonnet | Critical — pokes holes in the investigators' conclusions |
-| Report Writer | Haiku | Fast — synthesizes findings into a clean, structured output |
+## Shared Rules
 
-Flow: `Ground → Investigate → Challenge → Synthesize`
+Agents should:
 
-## What's missing
+- Read `.claude/project-map.md` before broad exploration.
+- Follow `.claude/rules/token-discipline.md`.
+- Inspect only the requested area plus one dependency hop.
+- Return exact file references.
+- Stop before builds, live service calls, GitHub commands, or cross-repo scans unless approved.
 
-No agents are defined yet. This layer is not a priority right now. Candidate use cases when ready:
+## How To Add An Agent
 
-- **Deep company research** — spawn Investigators to pull funding history, team signals, product direction, and PM org in parallel, then synthesize into an intel report
-- **Interview debrief synthesis** — Context Scout loads all session notes, Investigator identifies patterns, Challenger stress-tests the diagnosis, Report Writer produces a ranked practice plan
-- **Article research** — parallel agents research different angles of a topic, Challenger flags weak claims, Report Writer assembles a sourced outline
+Create a `.md` file here with:
 
-## How to add an agent
-
-Create a `.md` file here with the agent's role prompt, tool access, and expected output format. Reference it from a skill or MCP tool that spawns it.
+- Purpose
+- Use when / do not use when
+- Allowed tools
+- Approval-required actions
+- File boundaries
+- Exploration process
+- Output format

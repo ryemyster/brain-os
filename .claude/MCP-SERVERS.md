@@ -8,7 +8,7 @@ Centralized reference for all Model Context Protocol servers configured in this 
 
 | Server | Type | Location | Status | Purpose |
 |--------|------|----------|--------|---------|
-| `brain-os` | stdio | `brain-os-mcp/dist/index.js` | ✅ Active | Job hunt tools + writing persistence |
+| `brain-os` | stdio | `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp/dist/index.js` | ✅ Active | Job hunt tools + operational memory |
 | `founder-os` | stdio | `../ascendvent/founderos/dist/index.js` | ✅ Active | Product discovery for Ascendvent |
 | `github` | HTTP | `https://api.githubcopilot.com/mcp/` | 🟡 Phase 4 | Repo activity (not yet integrated) |
 
@@ -16,9 +16,11 @@ Centralized reference for all Model Context Protocol servers configured in this 
 
 ## Brain-OS Server
 
-**Purpose:** Provides 12 tools for job hunting, interview prep, and research synthesis.
+**Purpose:** Provides tools for job hunting, interview prep, research synthesis, and operational memory.
 
-**Location:** `brain-os-mcp/` (TypeScript source, compiled to `dist/index.js`)
+**Location:** sibling repo `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp`
+
+This root repo is the Claude Code orchestration workspace. MCP server development belongs in the sibling repo.
 
 **Tools:**
 - `daily` — Morning brief (calendar + email + pipeline)
@@ -39,17 +41,15 @@ Centralized reference for all Model Context Protocol servers configured in this 
 - **Gmail** (pre-fetch for `daily`)
 - **Notion** (read job pipeline, write research findings)
 
-**Configuration:** Registered in `~/.claude/settings.json` with `BRAIN_ROOT` environment variable pointing to project root.
+**Configuration:** Registered in local Claude settings with:
 
-**Build:** `npm run build` inside `brain-os-mcp/`
+- command path pointing to `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp/dist/index.js`
 
-**How to rebuild after changes:**
-```bash
-cd brain-os-mcp
-npm run build
-```
+Do not store local settings or tokens in git.
 
-Then restart Claude Code session to load new build.
+Do not configure the MCP server to depend on this repo's filesystem layout. Orchestration should gather relevant context from `context-store/` and pass concise context into MCP tools explicitly.
+
+**Build:** build from the sibling MCP repo only, after explicit approval.
 
 ---
 
@@ -82,7 +82,7 @@ Then restart Claude Code session to load new build.
 **Next steps:**
 - Integrate into `daily` tool to show project status
 - Surface in project reviews
-- Link to `projects/index.md` updates
+- Link to `context-store/projects/index.md` updates
 
 ---
 
@@ -108,8 +108,8 @@ Then restart Claude Code session to load new build.
 │  PostToolUse hooks fire                 │
 │    (prompt to remember)                 │
 │         ↓                               │
-│  remember tool writes to context/      │
-│  (companies, sessions, stories)        │
+│  remember tool writes to operational memory          │
+│  local notes stay under context-store/               │
 │         ↓                               │
 │  Stop hook runs (session-write.sh)     │
 │    (archives old sessions)              │
@@ -137,11 +137,13 @@ Then restart Claude Code session to load new build.
 3. Returns: Company history, fit notes, interview progress
 4. Appends new findings back via `remember` → `notion-update-page`
 
-### remember → context/
+### remember → operational memory
 
 1. User calls `remember type=company|session|story|insight` with content
-2. Writes to local file: `context/companies/`, `context/sessions/`, `context/stories/`, or `context/insights/`
-3. (Phase 5) Also syncs to Notion pipeline database
+2. Saves through the MCP server's operational memory layer.
+3. Human-readable/manual context remains in this repo under `context-store/context/`.
+
+The orchestration layer is responsible for reading, selecting, and summarizing local `context-store/` files before calling BrainOS MCP tools. The MCP server should receive explicit context and should not depend on this repo's filesystem layout.
 
 ---
 
@@ -149,7 +151,7 @@ Then restart Claude Code session to load new build.
 
 | Variable | Purpose | Set in |
 |----------|---------|--------|
-| `BRAIN_ROOT` | Path to project root | `.claude/settings.json` (brain-os server env) |
+| `BRAIN_ROOT` | Legacy only; do not use for direct repo context reads | avoid for new workflows |
 | `NOTION_TOKEN` | Notion API authentication | `~/.claude/settings.json` env |
 | `ANTHROPIC_API_KEY` | For Claude API calls within tools | `~/.claude/settings.json` env (optional, uses local token if set) |
 
@@ -187,10 +189,11 @@ Then restart Claude Code session to load new build.
 
 ### Brain-OS tools not responding
 
-1. Check that build is current: `npm run build` inside `brain-os-mcp/`
-2. Verify registration in `~/.claude/settings.json` (paths and env vars)
-3. Test direct call: `echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | BRAIN_ROOT=/path node dist/index.js`
-4. Restart Claude Code session to reload
+1. Switch to sibling repo `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp`.
+2. Check that its build output exists at `dist/index.js`.
+3. Verify local Claude MCP registration points to the sibling repo.
+4. Run build or direct smoke tests only after explicit approval.
+5. Restart Claude Code session to reload.
 
 ### Google Calendar/Gmail not loading in `daily`
 
@@ -217,5 +220,4 @@ Then restart Claude Code session to load new build.
 | GitHub MCP | 4 | 🟡 Waiting | Configured, not integrated into tools |
 | GitHub repo health feed | 4 | ⏳ Planned | To integrate into `daily` |
 | Google Analytics integration | 5 | ⏳ Planned | Writing performance dashboard |
-| LanceDB semantic search | 5 | ⏳ Planned | Issue #9 |
-
+| Vector retrieval / semantic memory | 5 | 🟡 In progress | Implemented by BrainOS MCP server memory layer |
