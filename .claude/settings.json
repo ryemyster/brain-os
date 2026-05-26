@@ -73,6 +73,26 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/pipeline-guard.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/pipeline-guard.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": "mcp__brain-os-mcp__daily",
         "hooks": [
           {
