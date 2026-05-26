@@ -43,13 +43,13 @@ Brought in to restore delivery on a stalled SIEM modernization across security o
 **Ascendvent**  
 *2024 – Present*
 
-Product practice lab focused on workflow systems and agent infrastructure.
+Founded and shipped Check-In by Ascendvent — a live B2B SaaS platform for coaching practitioners with active paying subscribers. Built agent infrastructure alongside it and open-sourced the architecture.
 
-- Ran 50+ VoC interviews, killed initial hypothesis early based on unit economics  
-- Pivoted to B2B practitioners based on operational constraints and willingness-to-pay signals  
-- Built and open-sourced AgentOS and AutoResearch infrastructure  
-- Shipped 3 MCP servers including Product Operating Model + ShaleYeah  
-- Published 60+ essays on systems thinking, product orgs, and AI workflows  
+- Check-In is live at checkin.ascendvent.life. AI generates personalized client check-ins in the coach's voice and client response summaries → pre-session briefs for coaches. Built with Claude Code, Next.js, Supabase, Stripe and Playwright. $15/month against $29/month competitors, with paying subscribers on Pro tier.  
+- Ran 50+ VoC interviews. Killed the original hypothesis when unit economics did not support the model. Pivoted to B2B practitioners after discovery identified operational overhead as the real constraint.  
+- Built FounderOS — an 11-stage AI-gated product development pipeline running on a custom MCP server, including preflight validation gates and a generate-score-improve loop for PRD generation. Trademarked AOSI® (Agent Orchestrated Self Improvement).  
+- Open-sourced agent infrastructure on GitHub: AgentOS and AutoResearch. Public proof of agentic architecture judgment.  
+- 62 essays on Signal HoriZon covering operating models, platform operations, and AI product delivery.  
 
 ---
 

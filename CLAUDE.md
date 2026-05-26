@@ -29,8 +29,8 @@ Use these durable references instead of re-scanning the repo:
 - Company name or role mentioned: assume job-search context.
 - Pasted job description: use the `apply` workflow.
 - Upcoming interview or meeting: use `prep` or `/prep-loop`.
-- MCP/tool/schema/runtime question: switch to `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp`.
-- Code/package question: confirm whether it belongs in the sibling MCP repo before inspecting anything here.
+- MCP/tool/schema/runtime question: document the issue and tell Ryan — do NOT cd into or edit `brain-os-mcp`.
+- Code/package question in sibling repo: document file/line/fix/use-case and hand off — do NOT enter or edit the other repo.
 - Content-only update: stay in the target markdown area; use `context-store/career/voice-and-style.md` only when tone matters.
 - Writing/blog work: match `context-store/career/voice-and-style.md`.
 
@@ -44,7 +44,7 @@ Use these durable references instead of re-scanning the repo:
 | `context-store/career/job-criteria.md` | Role preferences |
 | `context-store/projects/index.md` | Cross-project status and routing |
 | `context-store/context/` | Human-readable memory docs and session context |
-| Supabase memory via BrainOS MCP | Current operational memory layer |
+| Supabase memory via BrainOS MCP | `recall(list)` → enumerate labels; `recall(label)` → load exact entry with `updatedAt`; `search(query)` → semantic discovery |
 | `concept-images/` | Private visual reference/inspiration only; do not publish, quote, or embed |
 
 Notion is the primary source for several career/workflow tools. Local markdown is still useful, but do not assume it is the only source of truth.
@@ -65,7 +65,7 @@ The MCP server should not read this repo's filesystem layout directly. Before ca
 - Prefer exact file references over broad summaries.
 - Do not inspect unrelated areas once the answer is clear.
 - Start with `.claude/project-map.md` before broad exploration.
-- Follow `.claude/brainos-context-contract.md` before MCP tool calls.
+- Follow `.claude/brainos-context-contract.md` before MCP tool calls. Always: localhost:8088 → recall(list) → recall/search → external APIs.
 - Do not treat this root repo as an app codebase.
 - Follow `.claude/rules/token-discipline.md` for exploration limits.
 - Follow `.claude/rules/security.md`; never read real `.env`, `.env.*`, `*.env`, or secret-bearing settings files.

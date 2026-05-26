@@ -7,6 +7,7 @@ Use this rule for every BrainOS task unless the user explicitly asks for a broad
 - Start with `.claude/project-map.md`.
 - Follow `.claude/brainos-context-contract.md` before BrainOS MCP tool calls.
 - Follow `.claude/rules/security.md`.
+- Follow `.claude/rules/repo-boundaries.md` — never edit files outside this repo.
 - Identify the task type before reading files.
 - Read the smallest set of files that can answer or implement the request.
 - Stop expanding once the answer, edit point, or risk is clear.
