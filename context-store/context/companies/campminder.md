@@ -4,7 +4,7 @@
 **Group Product Manager, Shared Platform**
 
 ## Status
-Pre-screen scheduled — May 27, 2026 at 1:00 PM MST (30 min, phone)
+❌ Closed — Role filled as of May 27, 2026 (confirmed by Marty, BW Bacon)
 
 ## Recruiter
 Marty — BW Bacon Staffing  

@@ -11,7 +11,8 @@
 
 | Week | Submitted | Status |
 |------|-----------|--------|
-| May 17–23, 2026 | — | **NOT SUBMITTED** — due ASAP via MyUI+ |
+| May 24–30, 2026 | — | **NOT SUBMITTED** — current week in progress |
+| May 17–23, 2026 | — | **NOT SUBMITTED** — overdue, file ASAP via MyUI+ |
 
 ---
 
@@ -32,6 +33,14 @@
 - Portal: MyUI+ (Colorado Department of Labor and Employment)
 - File weekly, typically due Sunday night or Monday
 - Log job search activities each week (applications, interviews, outreach)
+
+## Activities to Log for Week May 24–30
+
+- T-Mobile role — resume submitted via referral from Rishita (networking contact, May 27) — role filled
+- Trilon Director of PM — reviewed JD, replied to Marty at BW Bacon (networking, May 27) — not a fit per recruiter
+- CampMinder pre-screen — role filled before screen (Marty, BW Bacon, May 27)
+- CampMinder pre-screen scheduled — May 27, 1:00 PM MST (Marty, BW Bacon)
+- Playlist intro call scheduled — June 1, 11:00 AM MST (Andrea Sumrall, recruiter)
 
 ## Activities to Log for Week May 17–23
 
