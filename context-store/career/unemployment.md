@@ -12,7 +12,7 @@
 | Week | Submitted | Status |
 |------|-----------|--------|
 | May 24–30, 2026 | — | **NOT SUBMITTED** — current week in progress |
-| May 17–23, 2026 | — | **NOT SUBMITTED** — overdue, file ASAP via MyUI+ |
+| May 17–23, 2026 | May 26, 2026 | ✅ Filed |
 
 ---
 
