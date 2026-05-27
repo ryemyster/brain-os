@@ -41,6 +41,7 @@
 - CampMinder pre-screen — role filled before screen (Marty, BW Bacon, May 27)
 - CampMinder pre-screen scheduled — May 27, 1:00 PM MST (Marty, BW Bacon)
 - Playlist intro call scheduled — June 1, 11:00 AM MST (Andrea Sumrall, recruiter)
+- Dave (NASDAQ: DAVE) — applied for Sr. PM, Flex via Ashby (May 27) — direct application
 
 ## Activities to Log for Week May 17–23
 
