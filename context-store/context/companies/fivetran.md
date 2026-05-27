@@ -1,7 +1,7 @@
 # Fivetran
 
 **Role:** Senior Product Manager, Enterprise Platform  
-**Status:** 🟢 First Round — Scheduling in progress  
+**Status:** 🔴 Likely ghosted — silent after availability submission  
 **Recruiter:** Karen — karen@fivetran.com  
 **Interview format:** Video call via Guide.co — https://app3.guide.co/guide/fivetran/9HP93WC6  
 **Priority:** High  
@@ -14,8 +14,9 @@
 - Availability submitted May 20 via Guide.co
 - Karen confirmed interest May 20: "We'd like to move forward with the interview process"
 - Ryan replied May 21 with availability
-- Waiting on scheduling confirmation as of May 24
-- **Follow-up trigger:** If no calendar invite by EOD May 25 → email karen@fivetran.com
+- Waited on scheduling confirmation as of May 24
+- No response by EOD May 25 or after — likely ghosted or automated outreach sent in error
+- Closing out as of May 27, 2026
 
 ---
 
