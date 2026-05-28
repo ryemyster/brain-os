@@ -29,8 +29,10 @@ Before calling BrainOS MCP tools, read only the minimum relevant files from `con
 
 Before any MCP tool call, check in this order:
 
-1. **localhost:8088** — scan `context-store/` for relevant local files (healthcheck first)
-   - `POST /find {"path": "context-store/", "query": "<company or topic>"}` → read `ai-context/` output
+1. **localhost:8088** — scan local files (healthcheck first; if `ai-context/find-*.md` already covers this topic, read it — don't re-call)
+   - `POST /find {"path": "ryemyster/brain-os/context-store", "query": "<company or topic>"}` → read `ai-context/` output
+   - Use `/find` for discovery; escalate to `/context` only if you need a full bundle across multiple paths
+   - Full integration protocol: `GET http://localhost:8088/setup`
    - Use for: session history, company notes, career docs, prior outreach
 2. **`recall` + `search`** — check BrainOS Supabase memory
    - `recall(action="list", listType="company")` — enumerate stored company labels first (cold-start check)

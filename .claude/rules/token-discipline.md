@@ -25,6 +25,49 @@ Use this rule for every BrainOS task unless the user explicitly asks for a broad
 | Review | `git diff`, changed files, relevant scripts | Unchanged directories or live services |
 | Release check | Package scripts, MCP docs, env docs, changed files | Deploy, push, external health checks |
 
+## Context Engine — Wave Scanning
+
+Never scan a broad path in one call. Break it into small, targeted waves and stop as soon as the answer is found.
+
+**Wave pattern:**
+1. Call the narrowest path that could contain the answer (e.g., `context-store/sessions`)
+2. Read `ryemyster/local-model/ai-context/` output — stop if the answer is there
+3. If not found, expand by one level (e.g., `context-store/context`) — stop if found
+4. Continue expanding one subdirectory at a time, never the whole repo
+
+**Never do this:**
+```
+POST /find {"path": "ryemyster/brain-os", "query": "..."}   ← scans everything
+POST /context {"paths": ["ryemyster/brain-os"]}             ← scans everything
+```
+
+**Do this instead:**
+```
+Wave 1: POST /find {"path": "ryemyster/brain-os/context-store/sessions", "query": "..."}
+  → stop if found
+Wave 2: POST /find {"path": "ryemyster/brain-os/context-store/context", "query": "..."}
+  → stop if found
+Wave 3: POST /find {"path": "ryemyster/brain-os/context-store/career", "query": "..."}
+  → stop if found
+```
+
+**Max depth per wave:** one subdirectory. If a wave returns too many results, narrow the query — don't widen the path.
+
+**Code repos — always scope to source, skip config and tooling directories:**
+Never pass the repo root — it picks up directories that are noise for code tasks.
+
+Always skip:
+- `node_modules/`, `dist/`, `.next/`, `build/`, `.turbo/` — build artifacts and deps
+- `.claude/`, `CLAUDE.md` — Claude Code config; not source code
+
+Use source subdirectories directly:
+```
+✓  ryemyster/brain-os-mcp/src
+✓  ascendvent/checkin-ascendvent/src/app/api
+✗  ryemyster/brain-os-mcp          ← picks up node_modules + .claude/
+✗  ascendvent/checkin-ascendvent   ← picks up node_modules + .next + CLAUDE.md
+```
+
 ## Stop Conditions
 
 Stop reading and proceed when:

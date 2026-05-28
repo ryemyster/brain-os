@@ -28,15 +28,31 @@ Before calling MCP tools, gather only the minimum relevant context from `context
 
 Always check local and stored context before calling external APIs. Follow this sequence:
 
+**0. GET /setup (once per session)** — load the live integration protocol before any code or MCP task
+```bash
+curl -s http://localhost:8088/setup
+```
+Skip if the protocol is already loaded this session.
+
 **1. localhost:8088 (context engine)** — local files, free, fast
 ```bash
 curl -s http://localhost:8088/healthcheck  # verify up first
-POST /find   → semantic search across context-store/ files
-POST /summarize → deep read of one file
-POST /context   → full bundle (code tasks / brain-os-mcp only)
+POST /find   {"path": "ryemyster/brain-os/context-store", "query": "..."}  → semantic search
+POST /summarize {"file": "ryemyster/brain-os/<path>"}  → deep read of one file
+POST /context   {"task": "...", "paths": ["ryemyster/brain-os/..."], "focus": [...]}  → full bundle (code tasks only)
 ```
-Use for: session history, career docs, company notes, recent context.
-Output lands in `./ai-context/` — read those files.
+**Path prefix for this repo: `ryemyster/brain-os/` — never use a bare `"."`.**
+Use `/find` for discovery; only escalate to `/context` when you need a full bundle.
+Output lands in `ryemyster/local-model/ai-context/` — read those files; reuse within the session before re-calling.
+
+**Wave scanning — never scan a broad path in one call:**
+Scan one subdirectory at a time. Stop expanding as soon as the answer is found.
+```
+Wave 1: POST /find {"path": "ryemyster/brain-os/context-store/sessions", "query": "..."}  → stop if found
+Wave 2: POST /find {"path": "ryemyster/brain-os/context-store/context", "query": "..."}   → stop if found
+Wave 3: POST /find {"path": "ryemyster/brain-os/context-store/career",  "query": "..."}   → stop if found
+```
+Never pass `"ryemyster/brain-os"` as the path — that scans the whole repo.
 
 **2. `recall` + `search` (BrainOS MCP)** — Supabase memory lookup
 - `recall(action="list", listType="company")` — enumerate stored company labels (cold-start check)

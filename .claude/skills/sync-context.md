@@ -1,5 +1,16 @@
 End-of-session context sync. Summarize the session and persist it to both BrainOS memory (Supabase) and local `context-store/sessions/`.
 
+## Step 0 — Check context engine (skip if session files already in context)
+
+```bash
+curl -s http://localhost:8088/healthcheck
+```
+If up and session files not already known:
+```
+POST /find {"path": "ryemyster/brain-os/context-store/sessions", "query": "recent session summary"}
+```
+Read `ai-context/` output. Use it to avoid duplicate session files and to surface the last session's open threads.
+
 ## Steps
 
 1. **Summarize** this session in 3–5 tight bullets:

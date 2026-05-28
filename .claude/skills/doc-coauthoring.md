@@ -29,6 +29,19 @@ If user declines, work freeform. If user accepts, proceed to Stage 1.
 
 **Goal:** Close the gap between what the user knows and what Claude knows, enabling smart guidance later.
 
+### Pre-flight: Scan for existing source material
+
+Before asking the user questions, check whether relevant content already exists locally (skip if context is already in session):
+
+```bash
+curl -s http://localhost:8088/healthcheck
+```
+If up:
+```
+POST /find {"path": "ryemyster/brain-os/context-store", "query": "<document topic>"}
+```
+Read `ai-context/` output. If matching career docs, prior drafts, voice guide, or project notes surface, carry them forward into the context-gathering phase rather than asking the user to re-provide them.
+
 ### Initial Questions
 
 Start by asking the user for meta-context about the document:

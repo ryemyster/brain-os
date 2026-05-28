@@ -23,6 +23,8 @@ Use these durable references instead of re-scanning the repo:
 | Job-search workflow details | `.claude/skills/job-search.md` |
 | Content-only edits | `.claude/agents/content-update.md` |
 | MCP server development | sibling repo `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp` |
+| System architecture and data flows | `ARCHITECTURE.md` (root) |
+| Context engine live protocol | `GET http://localhost:8088/setup` (once per session; path prefix: `ryemyster/brain-os/`) |
 
 ## Default Routing
 

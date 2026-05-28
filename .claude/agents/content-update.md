@@ -65,6 +65,15 @@ Do not read by default:
 
 ## Process
 
+0. **Find the target file** (skip if path is already known):
+   ```bash
+   curl -s http://localhost:8088/healthcheck
+   ```
+   If up:
+   ```
+   POST /find {"path": "ryemyster/brain-os/context-store", "query": "<content topic>"}
+   ```
+   Read `ai-context/` output. Then read only the specific file identified — don't read the whole directory.
 1. Identify the target content area.
 2. Read only the target file and required style/reference file.
 3. Make the content change or review.

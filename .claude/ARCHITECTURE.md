@@ -93,7 +93,7 @@ sequenceDiagram
     participant W as remember()
 
     U->>CC: "What's on my plate?"
-    CC->>CE: POST /find — scan context-store/sessions/ (last 3 sessions)
+    CC->>CE: POST /find — path: ryemyster/brain-os/context-store/sessions (last 3)
     CE-->>CC: ai-context/sessions-summary.md
     CC->>R: recall(type=session, label=latest)
     R-->>CC: stored session memory (cross-session state)
@@ -161,7 +161,7 @@ sequenceDiagram
     U->>CC: "Change the recall tool schema"
     CC->>CE: POST /healthcheck
     CE-->>CC: ok
-    CC->>CE: POST /context (path=brain-os-mcp/)
+    CC->>CE: POST /context (paths=["ryemyster/brain-os-mcp/src"])
     CE-->>CC: ai-context/context-bundle.md
     CC->>FS: Read specific tool file (src/tools/recall.ts)
     FS-->>CC: file content
@@ -185,7 +185,7 @@ sequenceDiagram
     U->>CC: "Prep me for Fivetran"
     CC->>R: recall(type=company, label=fivetran) — all sections
     R-->>CC: Intel + Fit + prior Prep (if any)
-    CC->>CE: POST /find — scan context-store/career/achievements.md
+    CC->>CE: POST /find — path: ryemyster/brain-os/context-store/career, query: achievements
     CE-->>CC: relevant achievements + STAR stories
     CC->>MCP: prep(company=Fivetran, session_notes=synthesized context)
     MCP-->>CC: prep output (questions, anchor stories, talking points)
@@ -221,9 +221,21 @@ Three PNGs — private visual reference only. No programmatic pipeline. Never re
 
 | Gap | Impact | Priority |
 |-----|--------|----------|
-| localhost:8088 not wired into daily brief flow | Sessions and career docs scanned manually, not automatically on session start | Low |
 | concept-images/ has no pipeline | Images unused by any tool or workflow | Low (by design) |
-| PostToolUse/Stop hooks not configured | Persist reminders and session-write.sh are manual | Medium |
+
+## Recently Fixed
+
+| Gap | Fix |
+|-----|-----|
+| localhost:8088 not wired into daily brief flow | ✅ `/daily` skill now calls context engine in step 0 |
+| Sub-agents had no context engine guidance | ✅ `agents/README.md` now has Context Engine section with path prefix |
+| Skills used bare `context-store/` path | ✅ All skills updated to `ryemyster/brain-os/context-store` |
+| No `/setup` reference in any doc | ✅ `CLAUDE.md`, `brainos-context-contract.md`, `project-map.md` all reference it |
+| PostToolUse/Stop hooks not configured | ✅ `session-write.sh` (Stop), persist reminders (PostToolUse) — active in `settings.json` |
+| `searchMemory()` not exposed | ✅ `search` MCP tool live — semantic discovery across `brain_os_memories` |
+| `recall` returns `updated_at` in prose only | ✅ `recall` now returns `{ content, updatedAt, label, type }` — machine-readable |
+| No label discovery for cold-start | ✅ `recall(action="list", listType="company")` enumerates stored labels |
+| `intel.ts` doc said LLM-driven | ✅ JSDoc + mcp-map.md corrected: intel() is a brief generator; orchestrator drives research |
 
 ## Recently Fixed (2026-05-24)
 

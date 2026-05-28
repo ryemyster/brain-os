@@ -9,7 +9,7 @@ Before any MCP tool calls:
 1. **localhost:8088** — scan for local notes on this company:
    ```
    curl -s http://localhost:8088/healthcheck
-   POST /find  {"path": "context-store/", "query": "<company name>"}
+   POST /find  {"path": "ryemyster/brain-os/context-store", "query": "<company name>"}
    ```
    Read `ai-context/` output. If recent session notes or company files exist, carry them forward.
 
