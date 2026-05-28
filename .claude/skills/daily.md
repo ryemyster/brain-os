@@ -7,16 +7,27 @@ description: Start-of-day briefing. Surfaces calendar, email, job pipeline, and 
 
 Start-of-day orientation for Ryan. Scans local context first, then calls the daily MCP tool to pull live data.
 
-## Step 0 — Context engine (skip if session files already in context)
+## Step 0 — Context engine (always run; session memory alone is not enough)
+
+This skill handles both "what happened today" (backward-looking) and "what's tomorrow" (forward-looking). Session memory only covers the current conversation — the context store has prior-session data that is invisible without this scan.
 
 ```bash
 curl -s http://localhost:8088/healthcheck
 ```
-If up:
+If up, run two waves and stop when found:
+
+**Wave 1 — today's session notes:**
 ```
-POST /find {"path": "ryemyster/brain-os/context-store/sessions", "query": "recent session notes open threads"}
+POST /find {"path": "ryemyster/brain-os/context-store/sessions", "query": "YYYY-MM-DD session summary pipeline"}
 ```
-Read `ai-context/` output. Extract any open threads, follow-ups, or active pipeline state from the last session. Pass these as `pipelineNotes` to step 1.
+Surface: pipeline moves, decisions made, unemployment activity, interview prep, open items.
+
+**Wave 2 — broader context (only if wave 1 insufficient):**
+```
+POST /find {"path": "ryemyster/brain-os/context-store/context", "query": "active pipeline open threads"}
+```
+
+Read `ryemyster/local-model/ai-context/` output. Pass relevant pipeline state and open threads as `pipelineNotes` to step 1.
 
 ## Step 1 — Daily MCP tool
 

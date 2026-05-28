@@ -28,6 +28,7 @@ Use these durable references instead of re-scanning the repo:
 
 ## Default Routing
 
+- "What happened today" / "catch me up" / "what's on my plate" / "daily summary": run the `/daily` flow — context engine wave scan (sessions → context) → recall → Calendar/Gmail → combine. Never answer from session memory alone; the context store has prior-session data that is invisible to this session.
 - Company name or role mentioned: assume job-search context.
 - Pasted job description: use the `apply` workflow.
 - Upcoming interview or meeting: use `prep` or `/prep-loop`.
