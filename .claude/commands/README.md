@@ -11,6 +11,7 @@ A skill is a markdown file that contains a prompt template Claude follows when i
 Root orchestration skills are currently active here. MCP development skills live in the sibling repo `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp`.
 
 ### Orchestration & Workflow
+- **`/daily`** — Start-of-day briefing. Surfaces calendar, email, job pipeline, and open threads from yesterday. Use when starting a morning session or asking what's on your plate.
 - **`/job-search`** — Main orchestration skill for job hunt lifecycle. Chains together: scan → intel → fit → prep → apply/outreach → proctor → diagnose. Guides you through the full funnel from opportunity discovery to interview prep to pattern learning. Use this for end-to-end job hunting sessions.
 - **`/prep-loop`** — Quick 3-step sequence: intel → fit → prep for a specific company. Use this when you already know which company to prepare for and want fast intel + fit check + prep in one go.
 

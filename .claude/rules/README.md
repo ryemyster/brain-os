@@ -6,7 +6,7 @@ This directory documents standing rules and hook intent for Claude Code in this 
 
 | Rule | File | Purpose |
 |------|------|---------|
-| BrainOS context contract | `../brainos-context-contract.md` | Defines context ownership between this repo and the standalone MCP server |
+| BrainOS context contract | `.claude/brainos-context-contract.md` (one level up, not in `rules/`) | Defines context ownership between this repo and the standalone MCP server |
 | Token discipline | `token-discipline.md` | Prevent repo over-scanning, broad context loading, and unapproved live/build commands |
 | Security | `security.md` | Prevent reading, printing, searching, or exposing secrets and real environment files |
 | Repo boundaries | `repo-boundaries.md` | Never edit files outside this repo — cross-repo bugs get documented and handed off |

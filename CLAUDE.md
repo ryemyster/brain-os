@@ -52,26 +52,13 @@ Use these durable references instead of re-scanning the repo:
 
 Notion is the primary source for several career/workflow tools. Local markdown is still useful, but do not assume it is the only source of truth.
 
-## BrainOS MCP Server
-
-The BrainOS MCP server now lives in the sibling repo:
-
-`/Users/rmcdonald/Repos/ryemyster/brain-os-mcp`
-
-This root repo should not run MCP builds, tests, server starts, or package release checks. For MCP development, work from the sibling repo.
-
-The MCP server should not read this repo's filesystem layout directly. Before calling BrainOS MCP tools, gather the minimum relevant context from `context-store/` and pass concise context explicitly.
-
 ## Working Rules
 
 - Be direct and concise.
 - Prefer exact file references over broad summaries.
 - Do not inspect unrelated areas once the answer is clear.
 - Start with `.claude/project-map.md` before broad exploration.
-- Follow `.claude/brainos-context-contract.md` before MCP tool calls. Always: localhost:8088 → recall(list) → recall/search → external APIs.
 - Do not treat this root repo as an app codebase.
-- Follow `.claude/rules/token-discipline.md` for exploration limits.
-- Follow `.claude/rules/security.md`; never read real `.env`, `.env.*`, `*.env`, or secret-bearing settings files.
 - Empty career files mean “ask for content,” not “infer or hallucinate.”
 - At the end of substantive job-search or research sessions, persist important learnings with `remember` or `/sync-context`.
 

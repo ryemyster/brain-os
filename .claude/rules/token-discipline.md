@@ -4,10 +4,6 @@ Use this rule for every BrainOS task unless the user explicitly asks for a broad
 
 ## Default Behavior
 
-- Start with `.claude/project-map.md`.
-- Follow `.claude/brainos-context-contract.md` before BrainOS MCP tool calls.
-- Follow `.claude/rules/security.md`.
-- Follow `.claude/rules/repo-boundaries.md` — never edit files outside this repo.
 - Identify the task type before reading files.
 - Read the smallest set of files that can answer or implement the request.
 - Stop expanding once the answer, edit point, or risk is clear.
@@ -52,21 +48,6 @@ Wave 3: POST /find {"path": "ryemyster/brain-os/context-store/career", "query": 
 ```
 
 **Max depth per wave:** one subdirectory. If a wave returns too many results, narrow the query — don't widen the path.
-
-**Code repos — always scope to source, skip config and tooling directories:**
-Never pass the repo root — it picks up directories that are noise for code tasks.
-
-Always skip:
-- `node_modules/`, `dist/`, `.next/`, `build/`, `.turbo/` — build artifacts and deps
-- `.claude/`, `CLAUDE.md` — Claude Code config; not source code
-
-Use source subdirectories directly:
-```
-✓  ryemyster/brain-os-mcp/src
-✓  ascendvent/checkin-ascendvent/src/app/api
-✗  ryemyster/brain-os-mcp          ← picks up node_modules + .claude/
-✗  ascendvent/checkin-ascendvent   ← picks up node_modules + .next + CLAUDE.md
-```
 
 ## Stop Conditions
 

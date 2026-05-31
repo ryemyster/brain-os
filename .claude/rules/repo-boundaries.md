@@ -61,5 +61,5 @@ Please:
 - The "refuse and change flow" option means sometimes the fix is on brain-os's side, not the other repo
 
 ## Related
-- [[founderos-read-only]] — same principle, FounderOS-specific
+- `~/.claude/rules/founderos-read-only.md` (global rule) — same principle applied specifically to FounderOS
 - `token-discipline.md` — MCP tool changes route to sibling repo
