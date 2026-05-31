@@ -73,7 +73,7 @@ Do not read by default:
    ```
    POST /find {"path": "ryemyster/brain-os/context-store", "query": "<content topic>"}
    ```
-   Read `ai-context/` output. Then read only the specific file identified — don't read the whole directory.
+   Use `POST /vector-search` to retrieve previously indexed context. Then read only the specific file identified — don't read the whole directory.
 1. Identify the target content area.
 2. Read only the target file and required style/reference file.
 3. Make the content change or review.

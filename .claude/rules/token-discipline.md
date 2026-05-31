@@ -31,7 +31,7 @@ Never scan a broad path in one call. Break it into small, targeted waves and sto
 
 **Wave pattern:**
 1. Call the narrowest path that could contain the answer (e.g., `context-store/sessions`)
-2. Read `ryemyster/local-model/ai-context/` output — stop if the answer is there
+2. Use `POST /vector-search` to retrieve previously indexed context — stop if the answer is there
 3. If not found, expand by one level (e.g., `context-store/context`) — stop if found
 4. Continue expanding one subdirectory at a time, never the whole repo
 

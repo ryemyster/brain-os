@@ -21,7 +21,7 @@ BrainOS is now split into two responsibilities:
 | Context contract | `.claude/brainos-context-contract.md` |
 | MCP server registration | `.claude/MCP-SERVERS.md` |
 | Local context docs | `context-store/context/README.md` |
-| Skills | `.claude/skills/README.md` |
+| Skills | `.claude/commands/README.md` |
 | Rules and hooks | `.claude/rules/README.md` |
 
 ## Archive Note

@@ -26,9 +26,9 @@ This is not the MCP server codebase. The BrainOS MCP server lives in the sibling
 
 | Task Type | First Files | Stop Condition |
 |-----------|-------------|----------------|
-| Claude workflow change | `.claude/settings.json`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/` | Do not inspect MCP source unless a tool boundary is involved |
+| Claude workflow change | `.claude/settings.json`, `.claude/commands/`, `.claude/agents/`, `.claude/rules/` | Do not inspect MCP source unless a tool boundary is involved |
 | Content-only update | Target markdown file, `context-store/career/voice-and-style.md` if tone matters | Do not inspect MCP source or run commands |
-| Job-search workflow | `.claude/skills/job-search.md`, relevant `context-store/career/` files | Do not read broad session history unless needed |
+| Job-search workflow | `.claude/commands/job-search.md`, relevant `context-store/career/` files | Do not read broad session history unless needed |
 | Writing/content | Target file, `context-store/career/voice-and-style.md` | Do not inspect MCP source or unrelated project files |
 | MCP server development | Switch to `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp` | Do not perform MCP dev work in this repo |
 | MCP tool call | `.claude/brainos-context-contract.md`, relevant `context-store/` files | Pass concise explicit context; do not assume MCP reads this repo |
@@ -57,7 +57,7 @@ For any non-trivial task, check layers in sequence before calling external APIs:
 | **3. External APIs** | Gmail, Google Calendar, Notion MCP | Live data only — new emails, today's events, live pipeline rows |
 | **4. `remember`** | Write new context back to Supabase | After any session with substantive output |
 
-High-level architecture: `ARCHITECTURE.md` (root). Detailed topology + sequence diagrams: `.claude/ARCHITECTURE.md`. Integration protocol: `GET http://localhost:8088/setup`.
+High-level architecture: `docs/ARCHITECTURE.md`. Detailed topology + sequence diagrams: `.claude/ARCHITECTURE.md`. Integration protocol: `GET http://localhost:8088/setup`.
 - Local settings are ignored and should not contain committed secrets.
 
 ## Exploration Rules

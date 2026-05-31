@@ -43,7 +43,7 @@ POST /context   {"task": "...", "paths": ["ryemyster/brain-os/..."], "focus": [.
 ```
 **Path prefix for this repo: `ryemyster/brain-os/` — never use a bare `"."`.**
 Use `/find` for discovery; only escalate to `/context` when you need a full bundle.
-Output lands in `ryemyster/local-model/ai-context/` — read those files; reuse within the session before re-calling.
+Results are embedded and stored in Supabase pgvector (primary). Use `POST /vector-search` to retrieve previously indexed context before re-calling. If the engine was recently down, check `~/Library/Application Support/context-store/artifacts/` as crash-recovery fallback.
 
 **Wave scanning — never scan a broad path in one call:**
 Scan one subdirectory at a time. Stop expanding as soon as the answer is found.

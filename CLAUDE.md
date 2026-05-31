@@ -20,10 +20,10 @@ Use these durable references instead of re-scanning the repo:
 | Repo orientation and file boundaries | `.claude/project-map.md` |
 | Context ownership contract | `.claude/brainos-context-contract.md` |
 | Token/scanning limits | `.claude/rules/token-discipline.md` |
-| Job-search workflow details | `.claude/skills/job-search.md` |
+| Job-search workflow details | `.claude/commands/job-search.md` |
 | Content-only edits | `.claude/agents/content-update.md` |
 | MCP server development | sibling repo `/Users/rmcdonald/Repos/ryemyster/brain-os-mcp` |
-| System architecture and data flows | `ARCHITECTURE.md` (root) |
+| System architecture and data flows | `docs/ARCHITECTURE.md` |
 | Context engine live protocol | `GET http://localhost:8088/setup` (once per session; path prefix: `ryemyster/brain-os/`) |
 
 ## Default Routing

@@ -12,7 +12,7 @@ Do not use this file as current operating guidance.
 | Local context layout | `.claude/project-map.md` |
 | Context ownership contract | `.claude/brainos-context-contract.md` |
 | MCP server registration | `.claude/MCP-SERVERS.md` |
-| Skills | `.claude/skills/README.md` |
+| Skills | `.claude/commands/README.md` |
 | Agents | `.claude/agents/README.md` |
 | Rules and hooks | `.claude/rules/README.md` |
 | Human-readable context store | `context-store/context/README.md` |

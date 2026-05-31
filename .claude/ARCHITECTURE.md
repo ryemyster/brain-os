@@ -12,19 +12,19 @@ graph TD
         CC["Claude Code\n(Orchestrator)"]
         CS["context-store/\nLocal Markdown"]
         CI["concept-images/\nPNGs — manual only"]
-        AC["ai-context/\nAuto-written by context engine"]
     end
 
-    subgraph "local-model/ repo"
-        CE["Context Engine\nlocalhost:8088\n(Docker)"]
+    subgraph "context-manager/ repo"
+        CE["Context Engine\nlocalhost:8088\n(native uvicorn)"]
+        AR["Artifacts backup\n~/Library/Application Support/\ncontext-store/artifacts/"]
     end
 
     subgraph "brain-os-mcp/ repo"
         MCP["BrainOS MCP Server\nstdio/HTTP"]
     end
 
-    subgraph "Local Inference"
-        OL["Ollama\nlocalhost:11434\nnomic-embed-text\nqwen2.5-coder:3b/7b"]
+    subgraph "Local Inference (native Mac)"
+        OL["Ollama\nlocalhost:11434\nnomic-embed-text\nqwen2.5-coder:7b"]
     end
 
     subgraph "Supabase (Cloud)"
@@ -43,8 +43,7 @@ graph TD
     end
 
     CC -->|"reads"| CS
-    CC -->|"reads"| AC
-    CC -->|"POST /find /context /summarize"| CE
+    CC -->|"POST /find /context /summarize /vector-search"| CE
     CC -->|"calls tools"| MCP
     CC -->|"list_events"| GC
     CC -->|"search_threads / get_thread"| GM
@@ -52,7 +51,7 @@ graph TD
 
     CE -->|"embeds via"| OL
     CE -->|"stores/searches"| SB2
-    CE -->|"writes markdown to"| AC
+    CE -.->|"crash backup"| AR
 
     MCP -->|"embeds via"| OL
     MCP -->|"recall / remember"| SB1
@@ -71,7 +70,7 @@ graph TD
 | **Type** | File/code scanner | Key-value lookup | pgvector similarity |
 | **Index** | `code_embeddings` | `brain_os_memories` | `brain_os_memories` |
 | **Query** | Path + natural language | `type + label + section` | Embedding similarity |
-| **Output** | Markdown file to `ai-context/` | Stored markdown content | Ranked memory chunks with score + `updatedAt` |
+| **Output** | Embedded into `code_embeddings` pgvector; crash backup to `~/Library/Application Support/context-store/artifacts/` | Stored markdown content | Ranked memory chunks with score + `updatedAt` |
 | **Exposed as tool?** | Yes — via HTTP endpoints | Yes — `recall` tool (also `recall(action="list")` to enumerate labels) | ✅ Yes — `search` tool |
 | **Best for** | File search, code analysis, local markdown scan | Exact known entries (company, story, insight) | "Find anything related to X" — discovery before recall |
 
@@ -94,7 +93,7 @@ sequenceDiagram
 
     U->>CC: "What's on my plate?"
     CC->>CE: POST /find — path: ryemyster/brain-os/context-store/sessions (last 3)
-    CE-->>CC: ai-context/sessions-summary.md
+    CE-->>CC: vector search results
     CC->>R: recall(type=session, label=latest)
     R-->>CC: stored session memory (cross-session state)
     CC->>GC: list_events(today + tomorrow)
@@ -162,7 +161,7 @@ sequenceDiagram
     CC->>CE: POST /healthcheck
     CE-->>CC: ok
     CC->>CE: POST /context (paths=["ryemyster/brain-os-mcp/src"])
-    CE-->>CC: ai-context/context-bundle.md
+    CE-->>CC: context bundle (vector + scan results)
     CC->>FS: Read specific tool file (src/tools/recall.ts)
     FS-->>CC: file content
     CC->>FS: Edit in brain-os-mcp/ (NOT brain-os/)

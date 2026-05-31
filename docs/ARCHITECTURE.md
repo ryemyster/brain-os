@@ -22,23 +22,26 @@ graph TD
     subgraph "brain-os/ — This Repo"
         OA["Claude Code\nOrchestration Agent"]
         AG["Agents\n.claude/agents/"]
-        SK["Skills\n.claude/skills/"]
+        SK["Skills\n.claude/commands/"]
         HK["Hooks\n.claude/settings.json"]
         CS["context-store/\nLocal Markdown"]
-        AC["ai-context/\nContext Engine Output"]
     end
 
-    subgraph "localhost:8088 — Context Engine"
-        CE["Context Engine\nread-only file scanner\n/find /scan /summarize /context /setup"]
+    subgraph "localhost:8088 — context-manager"
+        CE["Context Engine\nread-only file scanner\n/find /scan /summarize /context /vector-search /setup"]
         OL["Ollama\nnomic-embed-text"]
-        SB2["Supabase\ncode_embeddings\n(pgvector)"]
+        AR["Artifacts backup\n~/Library/Application Support/\ncontext-store/artifacts/"]
     end
 
     subgraph "brain-os-mcp/ — MCP Server"
         MCP["BrainOS MCP\nintel · fit · prep · apply\noutreach · daily · remember\nrecall · search · story_draft\ndiagnose · proctor · scan"]
         ANT["Anthropic API\nclaude-sonnet-4-6\nclaude-haiku-4-5"]
-        SB1["Supabase\nbrain_os_memories\n(key-value + pgvector)"]
         NO2["Notion\npipeline writes"]
+    end
+
+    subgraph "Supabase Cloud"
+        SB1["brain_os_memories\n(key-value + pgvector)"]
+        SB2["code_embeddings\n(pgvector)"]
     end
 
     subgraph "External MCPs"
@@ -49,17 +52,16 @@ graph TD
 
     OA -->|"skills route to"| SK
     OA -->|"spawns"| AG
-    OA -->|"POST /find /scan /summarize /context"| CE
+    OA -->|"POST /find /scan /summarize /context /vector-search"| CE
     OA -->|"reads/writes"| CS
-    OA -->|"reads"| AC
     OA -->|"calls tools"| MCP
     OA -->|"list_events"| GC
     OA -->|"search_threads"| GM
     OA -->|"notion-fetch / notion-search"| NO
 
     CE -->|"embeds via"| OL
-    CE -->|"stores embeddings"| SB2
-    CE -->|"writes markdown"| AC
+    CE -->|"stores/searches embeddings"| SB2
+    CE -.->|"crash backup"| AR
 
     MCP -->|"LLM calls"| ANT
     MCP -->|"recall / remember"| SB1
@@ -99,10 +101,10 @@ graph TD
 Every agent and skill should move right only when the cheaper option didn't answer the question:
 
 ```
-ai-context/ cache → /find → /summarize → /context → recall → search → external APIs
+/vector-search → /find → /summarize → /context → recall → search → external APIs
 ```
 
-- **Cache first**: if `ai-context/find-*.md` already covers the topic this session, read it
+- **Vector first**: use `/vector-search` to retrieve previously indexed context before re-scanning
 - **Narrowest endpoint**: use `/find` for discovery; `/context` only for full multi-path bundles
 - **Concise MCP inputs**: extract only the relevant section from context engine output before passing to tools
 - **`/setup` once per session**: it's an orientation document, not a per-call lookup
@@ -113,7 +115,7 @@ ai-context/ cache → /find → /summarize → /context → recall → search �
 
 | Layer | Where | Best For |
 |-------|-------|----------|
-| `ai-context/` files | Local, session-lived | Context engine output — reuse within session |
+| `context-store/artifacts/` | Local, crash-recovery | Context engine backup — primary is pgvector |
 | `context-store/` markdown | Local, durable | Career docs, writing, projects, session notes |
 | `brain_os_memories` (Supabase) | Cloud, persistent | Company intel, stories, insights, session summaries |
 | `code_embeddings` (Supabase) | Cloud, persistent | Semantic code/file search via context engine |
@@ -136,3 +138,4 @@ Never use a bare `"."` — it scans all of `~/Repos`.
 
 *Detailed sequence diagrams and freshness rules: `.claude/ARCHITECTURE.md`*
 *Context engine integration protocol: `GET http://localhost:8088/setup`*
+*This file lives at `docs/ARCHITECTURE.md`*

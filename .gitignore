@@ -23,5 +23,3 @@ test_notion_write.js
 
 scratch/
 
-# Context engine output — never commit
-ai-context/

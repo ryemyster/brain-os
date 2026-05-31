@@ -20,7 +20,7 @@ Before any broad exploration, use the context engine instead of raw file reads. 
 
 **Cost hierarchy (cheapest → most expensive):**
 ```
-ai-context/ cache → /find → /summarize → /context → recall → search → external APIs
+/vector-search → /find → /summarize → /context → recall → search → external APIs
 ```
 Move right only when the cheaper option didn't answer the question.
 
@@ -39,9 +39,9 @@ Move right only when the cheaper option didn't answer the question.
 Scan in waves. Stop as soon as the answer is found. Never pass the whole repo as a path.
 
 ```
-Wave 1: narrowest likely path  →  read ai-context/ output  →  stop if found
-Wave 2: next subdirectory      →  read ai-context/ output  →  stop if found
-Wave 3: expand again           →  stop if found
+Wave 1: POST /vector-search {"query": "..."}  →  stop if found
+Wave 2: POST /find narrowest likely path       →  stop if found
+Wave 3: POST /find next subdirectory           →  stop if found
 ```
 
 Example — looking for company notes:
@@ -55,7 +55,7 @@ Never: `"path": "ryemyster/brain-os"` — that scans the whole repo.
 - Path prefix for this repo: `ryemyster/brain-os/` — never a bare `.`
 - Max one subdirectory per wave; narrow the query before widening the path
 - **Code repos: always scope to `src/` or equivalent** — never the repo root; skip `node_modules/`, `dist/`, `.next/`, `build/`, `.claude/`, `CLAUDE.md`
-- Output lands in `ryemyster/local-model/ai-context/` — read those files; don't re-call the same endpoint if the file exists
+- Results are stored in Supabase pgvector — use `/vector-search` to retrieve before re-calling the same endpoint
 - If `/healthcheck` returns non-200, fall back to direct file reads
 
 ## Shared Rules
