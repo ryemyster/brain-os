@@ -1,54 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "Bash(grep:*)",
-      "Bash(npm install:*)",
-      "Bash(npm run build:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git status)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git -C *)",
-      "Bash(git remote *)",
-      "Bash(ssh -T *)",
-      "Bash(gh *)",
-      "Bash(/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/gh-brain-os.sh *)",
-      "Bash(/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/session-write.sh)",
-      "Read(/Users/rmcdonald/Repos/**)",
-      "Read(/Users/rmcdonald/.ssh/config)",
-      "WebSearch",
-      "WebFetch(domain:www.arcade.dev)",
-      "mcp__claude_ai_Notion__notion-search",
-      "mcp__claude_ai_Notion__notion-create-pages",
-      "mcp__claude_ai_Notion__notion-update-page",
-      "mcp__claude_ai_Notion__notion-fetch",
-      "mcp__brain-os__scan",
-      "mcp__brain-os__intel",
-      "mcp__brain-os__fit",
-      "mcp__brain-os__prep",
-      "mcp__brain-os__apply",
-      "mcp__brain-os__outreach",
-      "mcp__brain-os__story_draft",
-      "mcp__brain-os__diagnose",
-      "mcp__brain-os__daily",
-      "mcp__brain-os__remember",
-      "mcp__claude_ai_Google_Calendar__list_events",
-      "mcp__claude_ai_Gmail__search_threads",
-      "Bash(./.claude/scripts/gh-brain-os.sh issue *)",
-      "mcp__claude_ai_Notion__notion-create-database",
-      "Bash(mcp-call brain-os-mcp *)",
-      "Bash(ls -la ~/.claude/mcp-servers/ 2>/dev/null || echo \"No mcp-servers dir\")",
-      "Read(//Users/rmcdonald/.claude/**)",
-      "Bash(cat)",
-      "Read(//tmp/**)",
-      "mcp__claude_ai_Notion__notion-query-database-view",
-      "Bash(git push *)",
-      "Bash(chmod +x /Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/archive-old-sessions.sh)",
-      "Bash(/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/date-inject.sh)"
-    ]
+    "allow": []
   },
   "hooks": {
     "SessionStart": [
@@ -93,11 +45,11 @@
         ]
       },
       {
-        "matcher": "mcp__brain-os-mcp__daily",
+        "matcher": "mcp__brain-os__daily",
         "hooks": [
           {
             "type": "command",
-            "command": "jq -n '{hookSpecificOutput: {hookEventName: \"PreToolUse\", additionalContext: \"PRE-FLIGHT CONTRACT: Before calling daily, complete ALL 4 steps in order: (1) curl -s http://localhost:8088/healthcheck — verify context engine is up (2) recall(action=list, listType=company) + recall(action=list, listType=session) — enumerate BrainOS memory (3) recall relevant company entries + recent sessions — load stored context (4) THEN call external APIs (Calendar, Gmail, Notion) for freshness delta only. Do not skip or reorder these steps.\"}}'",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/context-engine-guard.sh",
             "timeout": 10
           }
         ]
@@ -105,74 +57,74 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "mcp__brain-os-mcp__intel",
+        "matcher": "mcp__brain-os__intel",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Intel gathered. Now call mcp__brain-os-mcp__remember with type=company, label=<company-name>, and the full intel report as content. This persists the findings to context/companies/ so future sessions build on them.'"
+            "command": "echo 'Intel gathered. Now call mcp__brain-os__remember with type=company, label=<company-name>, and the full intel report as content. This persists the findings to context/companies/ so future sessions build on them.'"
           }
         ]
       },
       {
-        "matcher": "mcp__brain-os-mcp__fit",
+        "matcher": "mcp__brain-os__fit",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Fit score generated. Call mcp__brain-os-mcp__remember with type=company, label=<company-name>, and the fit score + rationale as content. Append to any existing company file.'"
+            "command": "echo 'Fit score generated. Call mcp__brain-os__remember with type=company, label=<company-name>, and the fit score + rationale as content. Append to any existing company file.'"
           }
         ]
       },
       {
-        "matcher": "mcp__brain-os-mcp__prep",
+        "matcher": "mcp__brain-os__prep",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Prep complete. Call mcp__brain-os-mcp__remember with type=company, label=<company-name>, and the prep notes as content. Append to any existing company file.'"
+            "command": "echo 'Prep complete. Call mcp__brain-os__remember with type=company, label=<company-name>, and the prep notes as content. Append to any existing company file.'"
           }
         ]
       },
       {
-        "matcher": "mcp__brain-os-mcp__apply",
+        "matcher": "mcp__brain-os__apply",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Apply analysis complete. Call mcp__brain-os-mcp__remember with type=session, label=apply-<company-name>-<date>, and the gap analysis + cover letter as content.'"
+            "command": "echo 'Apply analysis complete. Call mcp__brain-os__remember with type=session, label=apply-<company-name>-<date>, and the gap analysis + cover letter as content.'"
           }
         ]
       },
       {
-        "matcher": "mcp__brain-os-mcp__outreach",
+        "matcher": "mcp__brain-os__outreach",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Outreach drafted. Call mcp__brain-os-mcp__remember with type=company, label=<company-name>, and the outreach drafts + warm intro paths as content. Append to any existing company file.'"
+            "command": "echo 'Outreach drafted. Call mcp__brain-os__remember with type=company, label=<company-name>, and the outreach drafts + warm intro paths as content. Append to any existing company file.'"
           }
         ]
       },
       {
-        "matcher": "mcp__brain-os-mcp__story_draft",
+        "matcher": "mcp__brain-os__story_draft",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Story drafted. Call mcp__brain-os-mcp__remember with type=story, label=<theme>, and the full STAR story as content. This adds it to the story library for future interview prep.'"
+            "command": "echo 'Story drafted. Call mcp__brain-os__remember with type=story, label=<theme>, and the full STAR story as content. This adds it to the story library for future interview prep.'"
           }
         ]
       },
       {
-        "matcher": "mcp__brain-os-mcp__diagnose",
+        "matcher": "mcp__brain-os__diagnose",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Diagnosis complete. Call mcp__brain-os-mcp__remember with type=insight, label=diagnosis-<date>, and the pattern findings as content. This builds the recurring-gaps library.'"
+            "command": "echo 'Diagnosis complete. Call mcp__brain-os__remember with type=insight, label=diagnosis-<date>, and the pattern findings as content. This builds the recurring-gaps library.'"
           }
         ]
       },
       {
-        "matcher": "mcp__brain-os-mcp__scan",
+        "matcher": "mcp__brain-os__scan",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Scan complete. Call mcp__brain-os-mcp__remember with type=session, label=scan-<date>, and any high-signal opportunities or patterns found as content.'"
+            "command": "echo 'Scan complete. Call mcp__brain-os__remember with type=session, label=scan-<date>, and any high-signal opportunities or patterns found as content.'"
           }
         ]
       }
