@@ -28,13 +28,13 @@ graph TD
     end
 
     subgraph "localhost:8088 — context-manager"
-        CE["Context Engine\nread-only file scanner\n/find /scan /summarize /context /vector-search /setup"]
+        CE["Context Engine\nread-only file scanner\n/context /scan /find /summarize\n/routes /dependencies /diff-summary\n/draft /scaffold /index /vector-search /setup"]
         OL["Ollama\nnomic-embed-text"]
         AR["Artifacts backup\n~/Library/Application Support/\ncontext-store/artifacts/"]
     end
 
     subgraph "brain-os-mcp/ — MCP Server"
-        MCP["BrainOS MCP\nintel · fit · prep · apply\noutreach · daily · remember\nrecall · search · story_draft\ndiagnose · proctor · scan"]
+        MCP["BrainOS MCP\nintel · fit · prep · apply\noutreach · daily · remember\nrecall · search · story_draft\ndiagnose · proctor · scan\nloop · status"]
         ANT["Anthropic API\nclaude-sonnet-4-6\nclaude-haiku-4-5"]
         NO2["Notion\npipeline writes"]
     end
