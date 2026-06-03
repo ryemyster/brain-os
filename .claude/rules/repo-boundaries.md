@@ -4,6 +4,8 @@
 
 ## The Rule
 
+Anything inside `/Users/rmcdonald/Repos/ryemyster/brain-os/` is fair game. Everything else is off the table.
+
 Claude Code in `brain-os` must **never read, edit, run, build, commit, or push files in any other repository.**
 
 This includes:
@@ -11,6 +13,8 @@ This includes:
 - `/Users/rmcdonald/Repos/ascendvent/founderos`
 - Any other repo under `/Users/rmcdonald/Repos/`
 - Any path outside `/Users/rmcdonald/Repos/ryemyster/brain-os/`
+
+**External infrastructure is also off limits.** Never apply Supabase migrations, create tables, or modify database schema for tables owned by another repo. If the table doesn't exist and it should, the fix belongs in the repo that owns that schema — generate a handoff prompt and stop.
 
 **Do not read sibling repo source to diagnose a bug.** You don't need to see the code — you experienced the error. Report what you experienced.
 
