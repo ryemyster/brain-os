@@ -27,9 +27,9 @@ graph TD
         CS["context-store/\nLocal Markdown"]
     end
 
-    subgraph "localhost:8088 — context-manager"
+    subgraph "localhost:8088 — context-engine"
         CE["Context Engine\nread-only file scanner\n/context /scan /find /summarize\n/routes /dependencies /diff-summary\n/draft /scaffold /index /vector-search /setup"]
-        OL["Ollama\nnomic-embed-text"]
+        OL["Ollama\nqwen3.5:9b · qwen2.5-coder:3b\nnomic-embed-text"]
         AR["Artifacts backup\n~/Library/Application Support/\ncontext-store/artifacts/"]
     end
 
@@ -52,7 +52,7 @@ graph TD
 
     OA -->|"skills route to"| SK
     OA -->|"spawns"| AG
-    OA -->|"POST /find /scan /summarize /context /vector-search"| CE
+    OA -->|"MCP tools (primary) / REST /find /scan /context (compat)"| CE
     OA -->|"reads/writes"| CS
     OA -->|"calls tools"| MCP
     OA -->|"list_events"| GC
@@ -98,16 +98,16 @@ graph TD
 
 ## Token Optimization Hierarchy
 
-Every agent and skill should move right only when the cheaper option didn't answer the question:
+Use MCP tools first, fall back to REST only for scripts or compatibility. Move right only when the cheaper option didn't answer the question:
 
 ```
-/vector-search → /find → /summarize → /context → recall → search → external APIs
+investigate_codebase → load_context → vector_search → find_in_code → summarize_file → recall → external APIs
 ```
 
-- **Vector first**: use `/vector-search` to retrieve previously indexed context before re-scanning
-- **Narrowest endpoint**: use `/find` for discovery; `/context` only for full multi-path bundles
-- **Concise MCP inputs**: extract only the relevant section from context engine output before passing to tools
-- **`/setup` once per session**: it's an orientation document, not a per-call lookup
+- **`investigate_codebase` first**: prefer it over manually chaining advanced tools — the agent owns planning, memory search, verification, and repair
+- **Advanced tools for single bounded lookups**: `scan_directory`, `find_in_code`, `summarize_file`, `dependency_analysis`, `vector_search`
+- **Concise MCP inputs**: extract only the relevant section before passing to tools
+- **`/setup` once per session**: orientation document, not a per-call lookup
 
 ---
 

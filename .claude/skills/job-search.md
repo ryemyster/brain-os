@@ -29,11 +29,11 @@ Before calling BrainOS MCP tools, read only the minimum relevant files from `con
 
 Before any MCP tool call, check in this order:
 
-1. **localhost:8088** — scan local files (healthcheck first; use `/vector-search` before re-calling `/find` for topics already queried this session)
-   - `POST /vector-search {"query": "<company or topic>"}` → retrieve previously indexed context
-   - `POST /find {"path": "ryemyster/brain-os/context-store", "query": "<company or topic>"}` → fresh scan if vector search misses
-   - Use `/find` for discovery; escalate to `/context` only if you need a full bundle across multiple paths
-   - Full integration protocol: `GET http://localhost:8088/setup`
+1. **context-engine MCP** — scan local files (implicit healthcheck: if any `mcp__context-engine__*` tool returns `engine_down`, skip this layer; use `vector_search` before `load_context` for topics already queried this session)
+   - `vector_search(query="<company or topic>", mode="context_safe")` → retrieve previously indexed context
+   - `load_context(task="<company or topic>", paths=["ryemyster/brain-os/context-store/sessions"], mode="context_safe")` → fresh scan if vector search misses; wave through sessions → context → career
+   - Use `load_context` for discovery; use `investigate_codebase` only if you need multi-step exploration
+   - All context-engine calls go through MCP tools (`mcp__context-engine__*`); never curl the REST API directly
    - Use for: session history, company notes, career docs, prior outreach
 2. **`recall` + `search`** — check BrainOS Supabase memory
    - `recall(action="list", listType="company")` — enumerate stored company labels first (cold-start check)
@@ -57,7 +57,7 @@ See `.claude/ARCHITECTURE.md` for full sequence diagrams per flow.
 
 ## Source Notes
 
-- `context-store/career/` is the primary local source — check via localhost:8088 before hitting Notion.
+- `context-store/career/` is the primary local source — check via context-engine MCP tools before hitting Notion.
 - Key files:
   - `context-store/career/resume.md` — resume fallback
   - `context-store/career/achievements.md` — wins, metrics, STAR stories

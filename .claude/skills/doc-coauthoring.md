@@ -33,14 +33,14 @@ If user declines, work freeform. If user accepts, proceed to Stage 1.
 
 Before asking the user questions, check whether relevant content already exists locally (skip if context is already in session):
 
-```bash
-curl -s http://localhost:8088/healthcheck
-```
+Healthcheck: call any `mcp__context-engine__*` tool (e.g. `load_context`). If it returns `engine_down`, skip vector search and read the target file directly.
+
 If up:
 ```
-POST /find {"path": "ryemyster/brain-os/context-store", "query": "<document topic>"}
+vector_search(query="<document topic>")
+load_context(task="<document topic>", paths=["ryemyster/brain-os/context-store/sessions"])
 ```
-Use `POST /vector-search {"query": "<document topic>"}` to retrieve indexed context. If matching career docs, prior drafts, voice guide, or project notes surface, carry them forward into the context-gathering phase rather than asking the user to re-provide them.
+If matching career docs, prior drafts, voice guide, or project notes surface, carry them forward into the context-gathering phase rather than asking the user to re-provide them.
 
 ### Initial Questions
 

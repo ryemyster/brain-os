@@ -28,31 +28,12 @@ Before calling MCP tools, gather only the minimum relevant context from `context
 
 Always check local and stored context before calling external APIs. Follow this sequence:
 
-**0. GET /setup (once per session)** — load the live integration protocol before any code or MCP task
-```bash
-curl -s http://localhost:8088/setup
-```
-Skip if the protocol is already loaded this session.
+**0. Context engine check (once per session)** — call any `mcp__context-engine__*` tool (e.g. `load_context`). If it responds, the engine is up. Skip if already done this session.
 
-**1. localhost:8088 (context engine)** — local files, free, fast
-```bash
-curl -s http://localhost:8088/healthcheck  # verify up first
-POST /find   {"path": "ryemyster/brain-os/context-store", "query": "..."}  → semantic search
-POST /summarize {"file": "ryemyster/brain-os/<path>"}  → deep read of one file
-POST /context   {"task": "...", "paths": ["ryemyster/brain-os/..."], "focus": [...]}  → full bundle (code tasks only)
-```
-**Path prefix for this repo: `ryemyster/brain-os/` — never use a bare `"."`.**
-Use `/find` for discovery; only escalate to `/context` when you need a full bundle.
-Results are embedded and stored in Supabase pgvector (primary). Use `POST /vector-search` to retrieve previously indexed context before re-calling. If the engine was recently down, check `~/Library/Application Support/context-store/artifacts/` as crash-recovery fallback.
-
-**Wave scanning — never scan a broad path in one call:**
-Scan one subdirectory at a time. Stop expanding as soon as the answer is found.
-```
-Wave 1: POST /find {"path": "ryemyster/brain-os/context-store/sessions", "query": "..."}  → stop if found
-Wave 2: POST /find {"path": "ryemyster/brain-os/context-store/context", "query": "..."}   → stop if found
-Wave 3: POST /find {"path": "ryemyster/brain-os/context-store/career",  "query": "..."}   → stop if found
-```
-Never pass `"ryemyster/brain-os"` as the path — that scans the whole repo.
+**1. context-engine MCP** — local files, free, fast. Path prefix: `ryemyster/brain-os/` — never a bare `"."`.
+Healthcheck: `engine_down` error → fall back to direct file reading.
+Wave scan order: sessions → context → career. One subdirectory per wave; stop when found.
+See `.claude/rules/context-engine.md` for full tool decision table and wave pattern.
 
 **2. `recall` + `search` (BrainOS MCP)** — Supabase memory lookup
 - `recall(action="list", listType="company")` — enumerate stored company labels (cold-start check)

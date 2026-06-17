@@ -6,12 +6,12 @@ Usage: /prep-loop <company name>
 
 Before any MCP tool calls:
 
-1. **localhost:8088** — scan for local notes on this company:
+1. **context-engine MCP** — scan for local notes on this company:
    ```
-   curl -s http://localhost:8088/healthcheck
-   POST /find  {"path": "ryemyster/brain-os/context-store", "query": "<company name>"}
+   vector_search(query="<company name> session notes prep", mode="context_safe")
+   load_context(task="<company name>", paths=["ryemyster/brain-os/context-store/sessions"], mode="context_safe")
    ```
-   Use `POST /vector-search {"query": "<company name> session notes prep"}` to retrieve indexed context. If recent session notes or company files surface, carry them forward.
+   If the engine is down (`engine_down` error), skip to step 2. Use `vector_search` first; if thin, wave through sessions → context with `load_context`. Carry any surfaced notes forward.
 
 2. **recall list** — discover what's stored for companies:
    ```

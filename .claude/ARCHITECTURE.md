@@ -24,7 +24,7 @@ graph TD
     end
 
     subgraph "Local Inference (native Mac)"
-        OL["Ollama\nlocalhost:11434\nnomic-embed-text\nqwen2.5-coder:7b"]
+        OL["Ollama\nlocalhost:11434\nnomic-embed-text\nqwen2.5-coder:3b (default)\nqwen3:4b (arch)\nqwen3.5:9b (deep)"]
     end
 
     subgraph "Supabase (Cloud)"

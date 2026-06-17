@@ -66,14 +66,13 @@ Do not read by default:
 ## Process
 
 0. **Find the target file** (skip if path is already known):
-   ```bash
-   curl -s http://localhost:8088/healthcheck
-   ```
+   Healthcheck: call any `mcp__context-engine__*` tool. If it returns `engine_down`, skip vector search and read the target file directly.
    If up:
    ```
-   POST /find {"path": "ryemyster/brain-os/context-store", "query": "<content topic>"}
+   vector_search(query="<content topic>", mode="context_safe")
+   load_context(task="<content topic>", paths=["ryemyster/brain-os/context-store/career"], mode="context_safe")
    ```
-   Use `POST /vector-search` to retrieve previously indexed context. Then read only the specific file identified — don't read the whole directory.
+   Then read only the specific file identified — don't read the whole directory.
 1. Identify the target content area.
 2. Read only the target file and required style/reference file.
 3. Make the content change or review.

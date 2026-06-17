@@ -11,23 +11,22 @@ Start-of-day orientation for Ryan. Scans local context first, then calls the dai
 
 This skill handles both "what happened today" (backward-looking) and "what's tomorrow" (forward-looking). Session memory only covers the current conversation — the context store has prior-session data that is invisible without this scan.
 
-```bash
-curl -s http://localhost:8088/healthcheck
-```
-If up, run two waves and stop when found:
+Healthcheck: call any `mcp__context-engine__*` tool (e.g. `load_context`). If it returns `engine_down`, skip to step 1 and proceed with recall only.
+
+If up, use MCP tools in wave order and stop when found:
 
 **Wave 1 — today's session notes:**
 ```
-POST /find {"path": "ryemyster/brain-os/context-store/sessions", "query": "YYYY-MM-DD session summary pipeline"}
+load_context(task="YYYY-MM-DD session summary pipeline open items", paths=["ryemyster/brain-os/context-store/sessions"], mode="context_safe")
 ```
 Surface: pipeline moves, decisions made, unemployment activity, interview prep, open items.
 
 **Wave 2 — broader context (only if wave 1 insufficient):**
 ```
-POST /find {"path": "ryemyster/brain-os/context-store/context", "query": "active pipeline open threads"}
+load_context(task="active pipeline open threads", paths=["ryemyster/brain-os/context-store/context"], mode="context_safe")
 ```
 
-Use `POST /vector-search {"query": "recent session pipeline open threads"}` to retrieve indexed session context. Pass relevant pipeline state and open threads as `pipelineNotes` to step 1.
+Pass relevant pipeline state and open threads as `pipelineNotes` to step 1.
 
 ## Step 1 — Pre-fetch external data (orchestrator responsibility)
 
@@ -58,7 +57,7 @@ Present in this order:
 
 Lead with the highest-leverage action. Keep it scannable — bullets, not prose.
 
-## Step 3 — Persist (if anything new surfaced)
+## Step 4 — Persist (if anything new surfaced)
 
 If the daily tool surfaces new pipeline state or decisions, call:
 ```

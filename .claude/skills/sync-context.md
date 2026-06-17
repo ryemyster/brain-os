@@ -2,14 +2,14 @@ End-of-session context sync. Summarize the session and persist it to both BrainO
 
 ## Step 0 — Check context engine (skip if session files already in context)
 
-```bash
-curl -s http://localhost:8088/healthcheck
-```
+Healthcheck: call any `mcp__context-engine__*` tool (e.g. `load_context`). If it returns `engine_down`, skip and proceed with recall only.
+
 If up and session files not already known:
 ```
-POST /find {"path": "ryemyster/brain-os/context-store/sessions", "query": "recent session summary"}
+vector_search(query="recent session summary open threads", mode="context_safe")
+load_context(task="recent session summary", paths=["ryemyster/brain-os/context-store/sessions"], mode="context_safe")
 ```
-Use `POST /vector-search {"query": "recent session summary open threads"}` to retrieve indexed context. Use it to avoid duplicate session files and to surface the last session's open threads.
+Use this to avoid duplicate session files and to surface the last session's open threads.
 
 ## Steps
 

@@ -51,13 +51,13 @@ For any non-trivial task, check layers in sequence before calling external APIs:
 
 | Layer | What | When |
 |-------|------|------|
-| **1. localhost:8088** | Semantic scan of local files via context engine — **path prefix: `ryemyster/brain-os/`** | Session/career/company questions; code tasks in brain-os-mcp |
+| **1. Context Engine (MCP)** | Semantic scan via `mcp__context-engine__*` tools — **path prefix: `ryemyster/brain-os/`** | Session/career/company questions; code tasks in brain-os-mcp |
 | **2a. `recall(list)`** | Enumerate stored labels by type — `recall(action="list", listType="company")` | Cold-start: always run before exact recall to confirm label exists |
 | **2b. `recall` or `search`** | Key-value load by exact label OR pgvector semantic search for discovery | Before every intel/fit/prep/apply/outreach call; check `updatedAt` for staleness |
 | **3. External APIs** | Gmail, Google Calendar, Notion MCP | Live data only — new emails, today's events, live pipeline rows |
 | **4. `remember`** | Write new context back to Supabase | After any session with substantive output |
 
-High-level architecture: `docs/ARCHITECTURE.md`. Detailed topology + sequence diagrams: `.claude/ARCHITECTURE.md`. Integration protocol: `GET http://localhost:8088/setup`.
+High-level architecture: `docs/ARCHITECTURE.md`. Detailed topology + sequence diagrams: `.claude/ARCHITECTURE.md`. Context engine is called via MCP (`mcp__context-engine__*`); REST is for `/index` and admin ops only.
 - Local settings are ignored and should not contain committed secrets.
 
 ## Exploration Rules

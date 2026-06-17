@@ -11,6 +11,14 @@
             "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/date-inject.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/session-load.sh"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -51,6 +59,56 @@
             "type": "command",
             "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/context-engine-guard.sh",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__brain-os__intel",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/job-search-guard.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__brain-os__fit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/job-search-guard.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__brain-os__prep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/job-search-guard.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__brain-os__apply",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/job-search-guard.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__brain-os__outreach",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rmcdonald/Repos/ryemyster/brain-os/.claude/scripts/job-search-guard.sh",
+            "timeout": 5
           }
         ]
       },
