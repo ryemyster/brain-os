@@ -9,9 +9,9 @@ if [ -z "$HEALTH" ]; then
   exit 0
 fi
 
-# Context engine is up — check vector_row_count as the signal that indexing has run
-VECTOR_ROWS=$(curl -sf --max-time 2 http://localhost:8088/debug \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['vector_row_count'])" 2>/dev/null)
+# Context engine is up — check vector index status via /setup (admin endpoint)
+VECTOR_ROWS=$(curl -sf --max-time 2 http://localhost:8088/setup \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('vector_row_count', d.get('vector_index',{}).get('row_count','')))" 2>/dev/null)
 
 if [ -z "$VECTOR_ROWS" ] || [ "$VECTOR_ROWS" -lt 10 ]; then
   echo "⛔ CONTEXT ENGINE NOT INDEXED — vector store is empty"

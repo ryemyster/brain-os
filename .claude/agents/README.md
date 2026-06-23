@@ -16,12 +16,20 @@ This directory contains focused Claude agent definitions for the BrainOS orchest
 
 ## Context Engine (MCP — `mcp__context-engine__*`)
 
-Use context engine before any broad file reading. MCP is the primary transport — see `.claude/rules/context-engine.md` for tool decision table and wave scan order.
+Use context engine before any broad file reading. MCP is the primary transport — see `.claude/rules/context-engine.md` for full workflow.
+
+**Workflow: `find → assess → read → act → verify → refresh`**
 
 **Cost order (cheapest → most expensive):**
 `vector_search` → `load_context` → `investigate_codebase` → `recall` → `search` → external APIs
 
 Move right only when the cheaper option didn't answer. Always use `mode=context_safe` unless exact implementation detail is required. If a `context_safe` discovery result is thin, retry once without the mode flag before expanding scope. Path prefix: `ryemyster/brain-os/` — never a bare `.`.
+
+**Confidence gate before reading:** ≥1 matching artifact and scope ≤3 files = proceed. Otherwise escalate (one re-call without mode flag, then ask). Never read broadly on thin discovery.
+
+**Verify after every Edit/Write:** call `review_diff` with `git diff HEAD` — required gate, not optional.
+
+**Anti-patterns to avoid:** reading entire directories before relevance is established, loading multiple architecture docs simultaneously, using full-detail mode by default.
 
 ## Shared Rules
 

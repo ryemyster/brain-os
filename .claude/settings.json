@@ -124,6 +124,24 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'File written. Call review_diff(diff=<git diff HEAD output>) to verify the change is correct before moving on. Required gate — do not skip.'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'File edited. Call review_diff(diff=<git diff HEAD output>) to verify the change is correct before moving on. Required gate — do not skip.'"
+          }
+        ]
+      },
+      {
         "matcher": "mcp__brain-os__intel",
         "hooks": [
           {

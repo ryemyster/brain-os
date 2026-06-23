@@ -23,13 +23,42 @@ Note: `/index` is the only operation that requires a direct REST call (no MCP eq
 
 ## Recommended Workflow
 
-`discover → narrow → read → act → refresh`
+`find → assess → read → act → verify → refresh`
 
-1. **Discover** — `/find`, `/vector-search`, `/scan`. Identify candidate artifacts; do not load content yet.
-2. **Narrow** — Use scores, summaries, paths, and metadata. Select only the most relevant items.
-3. **Read** — Load only selected artifacts. Prefer summary mode; use full mode only when implementation requires exact detail.
-4. **Act** — Perform work using the minimal required context. Verify cited source files before making changes.
-5. **Refresh** — Repeat discovery if context becomes stale. Do not preload repositories.
+### Step 1: Discover
+
+Use `find_in_code`, `vector_search`, or `scan_directory`. Goal: identify candidate artifacts. Do not load content yet.
+
+### Step 2: Assess Confidence (gate)
+
+Before reading anything, decide:
+
+**HIGH confidence → proceed to Step 3:**
+- ≥1 artifact with a matching path
+- Specific file or symbol located
+- Scope ≤3 files
+
+**LOW confidence → escalate in order:**
+1. One re-call without `mode=context_safe`
+2. Ask the user
+
+**LOW signals:** 0 artifacts returned, unrelated paths, symbol not found, scope >5 files.
+
+### Step 3: Read
+
+Load 1–3 artifacts max. Prefer summary mode. Use full mode only when implementation requires exact details.
+
+### Step 4: Act
+
+Perform work using the minimal required context. Verify cited source files before making repository changes.
+
+### Step 5: Verify
+
+After every Edit or Write, call `review_diff` with the output of `git diff HEAD`. This is a required gate, not an optional review. Do not skip.
+
+### Step 6: Refresh if Stale
+
+If follow-up edits shift scope, repeat from Step 1. Do not preload repositories.
 
 ## Two-Call Fallback
 
@@ -46,12 +75,21 @@ Start narrow, expand one level at a time, stop when found:
 
 Never pass `"ryemyster/brain-os"` as the path — scans the whole repo.
 
+## Anti-Patterns
+
+Avoid:
+- Reading entire repositories or directories before relevance is established
+- Loading multiple architecture documents simultaneously
+- Using full-detail mode by default
+- Returning full scan results without narrowing first
+- Skipping the confidence gate and reading broadly on thin discovery
+
 ## Model Routing & Timing
 
 Three-tier model stack (all inference via the context-engine MCP server, backed by Ollama):
 
-| Tier | Model | Used for | Wall time | Timeout |
-|------|-------|----------|-----------|---------|
+| Tier | Model | Used for | Benchmark range | Timeout |
+|------|-------|----------|-----------------|---------|
 | Default / interactive | `qwen2.5-coder:3b` | `/scan`, `/find`, `/dependencies`, pattern matching, grep synthesis | <1s–123s | 150s |
 | Architecture review | `qwen3:4b` | `investigate_codebase`, structural analysis, agent runs | 10s–563s | 650s |
 | Deep reasoning | `qwen3.5:9b` | `/diff-summary`, risk analysis, governance reasoning | 1s–520s | 600s |
@@ -63,6 +101,7 @@ Three-tier model stack (all inference via the context-engine MCP server, backed 
 - Budget an extra 30s before calling `/vector-search` if a code model was just used (embed model needs to swap in).
 - Always poll async endpoints (`/agents/*`); never assume synchronous completion.
 - If a call returns `stopped_reason: timeout` (HTTP 504), retry — do not increase client timeout.
+- Background endpoints (`/diff-summary`, `/agents/*`): fire and poll, never block context on them.
 
 ## After Any Agent Call
 
