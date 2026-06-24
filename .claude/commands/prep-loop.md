@@ -27,17 +27,17 @@ Before any MCP tool calls:
 
 ## Step 1 — Intel (skip if recall hit and recent)
 
-Call `mcp__brain-os-mcp__intel` for the company.
+Call `mcp__brain-os__intel` for the company.
 Pass any local notes from Step 0 as `pipelineNotes`.
 
 ## Step 2 — Fit
 
-Call `mcp__brain-os-mcp__fit` for the company.
+Call `mcp__brain-os__fit` for the company.
 Pass intel output + job criteria from `context-store/career/job-criteria.md` as context.
 
 ## Step 3 — Prep
 
-Call `mcp__brain-os-mcp__prep` for the company.
+Call `mcp__brain-os__prep` for the company.
 Pass synthesized intel + fit + any achievements context from `context-store/career/achievements.md`.
 
 ## Output

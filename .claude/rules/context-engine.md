@@ -10,8 +10,8 @@ Note: `/index` is the only operation that requires a direct REST call (no MCP eq
 
 | Situation | Tool | Mode |
 |-----------|------|------|
-| Open-ended investigation or multi-step exploration | `investigate_codebase` (primary) | `context_safe` |
-| Bounded pre-task context before a known task | `load_context` | `context_safe` |
+| **Default first pass** — bounded pre-task inventory | `load_context` (primary) | `context_safe` |
+| Open-ended multi-step investigation needing planning, memory, or repair passes (can take 10–50 min) | `investigate_codebase` | `context_safe` |
 | Semantic recall (after `/index` has run) | `vector_search` (direct) | `context_safe` |
 | Locate a concept (mechanical lookup) | `find_in_code` (direct) | `context_safe` |
 | Inventory one scoped directory | `scan_directory` (direct) | `context_safe` |
@@ -19,7 +19,7 @@ Note: `/index` is the only operation that requires a direct REST call (no MCP eq
 | Review a git diff | `review_diff` | — |
 | Evidence-based issue triage | `audit_issue` | — |
 
-**Always use `mode=context_safe` unless exact implementation detail is required.** Prefer `investigate_codebase` over chaining direct tools.
+**Always use `mode=context_safe` unless exact implementation detail is required.** Use `load_context` by default; escalate to `investigate_codebase` only when the task needs multi-step investigation, planning, memory, or repair passes.
 
 ## Recommended Workflow
 
@@ -40,7 +40,8 @@ Before reading anything, decide:
 
 **LOW confidence → escalate in order:**
 1. One re-call without `mode=context_safe`
-2. Ask the user
+2. Spawn an Explore subagent
+3. Ask the user
 
 **LOW signals:** 0 artifacts returned, unrelated paths, symbol not found, scope >5 files.
 

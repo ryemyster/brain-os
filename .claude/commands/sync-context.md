@@ -25,7 +25,7 @@ Use this to avoid duplicate session files and to surface the last session's open
    ```
    Format: date, topic, bullet summary, next actions. Keep it under 30 lines.
 
-3. **Write to BrainOS memory** — call `mcp__brain-os-mcp__remember`:
+3. **Write to BrainOS memory** — call `mcp__brain-os__remember`:
    ```
    type: "session"
    label: "YYYY-MM-DD-<topic>"

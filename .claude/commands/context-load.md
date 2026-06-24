@@ -20,9 +20,9 @@ Quick wave scan to surface current pipeline state without running the full daily
 
 3. **Wave 2 — broader context** (if wave 1 is thin)
    ```
-   investigate_codebase(task="Find current pipeline state, open items, and active company statuses", paths=["ryemyster/brain-os/context-store"], allowed_scopes=["repo:read"], mode="context_safe")
+   load_context(task="current pipeline state open items active companies", paths=["ryemyster/brain-os/context-store/context"], mode="context_safe")
    ```
-   Let the agent wave through sessions → context → career in order.
+   If still thin, try `paths=["ryemyster/brain-os/context-store/career"]`. Stop when found.
 
 4. **Recall check**
    ```

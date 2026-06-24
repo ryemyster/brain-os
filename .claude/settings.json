@@ -117,7 +117,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'BLOCKED: apply_migration is off limits from brain-os. Database schema changes belong to the repo that owns the table. Generate a handoff prompt for the correct repo instead and stop.'"
+            "command": "echo 'BLOCKED: apply_migration is off limits from brain-os. Database schema changes belong to the repo that owns the table. Generate a handoff prompt for the correct repo instead and stop.' ; exit 1"
           }
         ]
       }

@@ -11,7 +11,7 @@ if echo "$file_path" | grep -qE "(pipeline|career|context-store/sessions)"; then
 import json
 print(json.dumps({
   'hookSpecificOutput': {
-    'additionalContext': '⛔ PIPELINE GUARD: You are writing to a pipeline/career/session file. STOP. Have you called mcp__brain-os-mcp__remember() yet? The vector store is the PRIMARY retrieval layer — remember() MUST be called FIRST before any Notion write, pipeline.md edit, or session file write. Call remember() now if not done, then proceed.'
+    'additionalContext': '⛔ PIPELINE GUARD: You are writing to a pipeline/career/session file. STOP. Have you called mcp__brain-os__remember() yet? The vector store is the PRIMARY retrieval layer — remember() MUST be called FIRST before any Notion write, pipeline.md edit, or session file write. Call remember() now if not done, then proceed.'
   }
 }))
 "
